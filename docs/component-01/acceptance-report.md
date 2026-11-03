@@ -1,7 +1,7 @@
 # Component 01 — Acceptance Report
 
-**Component:** Claude Code → Local Mock LLM  
-**Status:** Functional tests passed — Final acceptance pending  
+**Component:** Claude Code → Local Mock LLM
+**Status:** Functional tests passed — Final acceptance pending
 **Environment:** macOS, Python 3.14.7, Claude Code 2.1.316
 
 ## 1. Test Results
