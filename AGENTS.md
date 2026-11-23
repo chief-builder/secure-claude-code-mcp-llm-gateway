@@ -39,7 +39,56 @@ The long-term objective is to prevent stolen access tokens from being replayed a
 
 ## Current Status
 
-Component 1: Design approved. Implementation not started.
+All eight components are implemented and accepted for the synthetic lab only.
+This is lab acceptance, not production readiness. MCP support is planned and
+not yet designed.
+
+Checks that remain pending:
+
+- Second-device reachability (all components).
+- Gateway invocation with debugger-recovered credentials (Component 6).
+- OS signing behavior during screen lock, independent of the helper's own
+  lock check (Component 7).
+- Final billed-cost reconciliation and budget-alert email delivery
+  (Component 8).
+
+Current work: preparing the repository for open-source publication on the
+`publish-prep` branch.
+
+## Repository Layout
+
+| Path | Components |
+|---|---|
+| `components/mock-llm` | 1 |
+| `components/oauth-lab` | 2A (Keycloak sign-in) |
+| `components/oauth-as` | 2B, 3, and the shared DPoP verifier for 5 |
+| `components/gateway` | 4, 5, 8 |
+| `components/broker` | 6, 7 (`native/` holds the Swift signer) |
+| `docs/component-NN` | Design specs and verification records |
+
+`gateway` imports from `oauth-as`, and `broker` imports from `gateway`, so a
+change to `oauth-as` requires rerunning all three suites.
+
+## Commands
+
+Run tests from each component directory:
+
+```sh
+cd components/oauth-lab && .venv/bin/python -m pytest -q
+cd components/oauth-as  && .venv/bin/python -m pytest -q
+cd components/gateway   && .venv/bin/python -m pytest -q
+cd components/broker    && .venv/bin/python -m pytest -q
+cd components/mock-llm  && ../../.venv/bin/python -m pytest -q
+```
+
+`mock-llm` uses the virtual environment at the repository root. Without
+`LAB_TLS_DIR`, 11 live Keycloak tests skip. Without
+`SECURE_SIGNER_TEST_BINARY`, 6 hardware signer tests skip. Report skipped
+tests as skipped, not passed.
+
+Lab keys, certificates and replay databases live under `~/secure-claude-lab`,
+outside the repository. Do not read, copy or create key material inside the
+repository.
 
 ## Security Requirements
 
