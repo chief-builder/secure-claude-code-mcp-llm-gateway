@@ -26,3 +26,6 @@ __pycache__/
 .coverage
 htmlcov/
 logs/
+
+# Claude Code personal overrides
+.claude/settings.local.json
