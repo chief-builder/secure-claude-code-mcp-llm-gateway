@@ -12,15 +12,14 @@ so 2B can validate Keycloak's certificate. From this directory in the same shell
 
 ```sh
 test -r "$LAB_TLS_DIR/ca.pem" && echo "Keycloak lab CA is available"
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-test.txt
+uv sync
 lab_home="${LAB_HOME:-$HOME/secure-claude-lab}"
 mkdir -p -m 700 "$lab_home"
 as_work="$(mktemp -d "$lab_home/as.XXXXXX")"
 sh ../oauth-lab/make-lab-tls.sh "$as_work/tls"
-.venv/bin/python app.py init-keys "$as_work/keys"
+uv run python app.py init-keys "$as_work/keys"
 printf 'AS CA file: %s\n' "$as_work/tls/ca.pem"
-.venv/bin/python app.py serve \
+uv run python app.py serve \
   --key-dir "$as_work/keys" \
   --upstream-ca "$LAB_TLS_DIR/ca.pem" \
   --tls-cert "$as_work/tls/server.pem" \
@@ -54,7 +53,7 @@ curl --silent --show-error --include --cacert "$as_ca" \
 Expect the AS issuer and empty grant and response type lists, a single public
 RSA signing key, and a generic HTTP 404 for the token request.
 
-Run `.venv/bin/python -m pytest -q` for the automated checks. Stop the service
+Run `uv run python -m pytest -q` for the automated checks. Stop the service
 with Ctrl-C. Remove the disposable `$as_work` directory when finished.
 
 ## Enable Component 3 in the synthetic lab
@@ -63,7 +62,7 @@ Use a disposable workspace and the existing verified Keycloak HTTPS setup.
 Follow the key and TLS provisioning commands above, then run:
 
 ```sh
-.venv/bin/python lab_exchange.py init-client "$as_work/exchanger" "$as_work/keys"
+uv run python lab_exchange.py init-client "$as_work/exchanger" "$as_work/keys"
 ```
 
 Obtain the synthetic employee's internal subject ID from the operator-controlled
@@ -72,7 +71,7 @@ identifier of at least 16 characters and set `gateway_subject` to that value.
 The policy allows letters, digits, underscores and hyphens for both IDs.
 
 ```sh
-.venv/bin/python - "$as_work/exchange-policy.json" "$lab_subject" "$gateway_subject" <<'PY'
+uv run python - "$as_work/exchange-policy.json" "$lab_subject" "$gateway_subject" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -86,7 +85,7 @@ Path(sys.argv[1]).write_text(json.dumps({
 }))
 PY
 
-.venv/bin/python app.py serve \
+uv run python app.py serve \
   --key-dir "$as_work/keys" \
   --upstream-ca "$LAB_TLS_DIR/ca.pem" \
   --tls-cert "$as_work/tls/server.pem" \
@@ -100,7 +99,7 @@ browser. The probe verifies the minted token and checks subject replay and
 token substitution. It prints a status code and keeps tokens in process.
 
 ```sh
-.venv/bin/python lab_exchange.py probe "$as_work/exchanger" \
+uv run python lab_exchange.py probe "$as_work/exchanger" \
   --keycloak-ca "$LAB_TLS_DIR/ca.pem" --as-ca "$as_work/tls/ca.pem" \
   --expected-subject "$gateway_subject"
 ```

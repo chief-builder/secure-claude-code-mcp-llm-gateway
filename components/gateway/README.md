@@ -1,12 +1,11 @@
 # Component 4 lab gateway
 
 Use only the synthetic lab identity and disposable credentials. Run from this
-directory with Python 3.12 or newer.
+directory with Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
 
 ```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-test.txt
-.venv/bin/python -m pytest -q
+uv sync
+uv run python -m pytest -q
 ```
 
 ## Run the browser-to-mock check
@@ -26,7 +25,7 @@ python3 -m venv .venv
    gateway_work="$(mktemp -d "$lab_home/gateway.XXXXXX")"
    sh ../oauth-lab/make-lab-tls.sh "$gateway_work/tls"
    (umask 077
-    .venv/bin/python -c 'import secrets; print(secrets.token_urlsafe(32))' > "$gateway_work/mock.token")
+    uv run python -c 'import secrets; print(secrets.token_urlsafe(32))' > "$gateway_work/mock.token")
    printf '%s\n' "$gateway_work"
    ```
 
@@ -35,7 +34,7 @@ python3 -m venv .venv
 
    ```sh
    MOCK_LLM_TOKEN="$(cat "$gateway_work/mock.token")" \
-     .venv/bin/python -m uvicorn app.main:app --app-dir ../mock-llm \
+     uv run python -m uvicorn app.main:app --app-dir ../mock-llm \
      --host 127.0.0.1 --port 8765 --no-access-log
    ```
 
@@ -44,7 +43,7 @@ python3 -m venv .venv
 
    ```sh
    GATEWAY_MOCK_TOKEN="$(cat "$gateway_work/mock.token")" \
-     .venv/bin/python gateway.py --as-ca "$as_work/tls/ca.pem" \
+     uv run python gateway.py --as-ca "$as_work/tls/ca.pem" \
      --tls-cert "$gateway_work/tls/server.pem" --tls-key "$gateway_work/tls/server.key"
    ```
 
@@ -52,7 +51,7 @@ python3 -m venv .venv
    `as_work`, and `LAB_TLS_DIR` to the same lab paths and run the probe.
 
    ```sh
-   .venv/bin/python lab_invoke.py "$as_work/exchanger" \
+   uv run python lab_invoke.py "$as_work/exchanger" \
      --keycloak-ca "$LAB_TLS_DIR/ca.pem" --as-ca "$as_work/tls/ca.pem" \
      --gateway-ca "$gateway_work/tls/ca.pem"
    ```
@@ -79,9 +78,9 @@ once for a DPoP lab run.
   : "${gateway_work:?Set the gateway lab directory}"
   mkdir -p "$gateway_work/dpop"
   chmod 700 "$gateway_work/dpop"
-  .venv/bin/python -c 'import secrets,sys; sys.stdout.buffer.write(secrets.token_bytes(32))' \
+  uv run python -c 'import secrets,sys; sys.stdout.buffer.write(secrets.token_bytes(32))' \
     > "$as_work/keys/dpop-nonce.key"
-  .venv/bin/python -c 'import secrets,sys; sys.stdout.buffer.write(secrets.token_bytes(32))' \
+  uv run python -c 'import secrets,sys; sys.stdout.buffer.write(secrets.token_bytes(32))' \
     > "$gateway_work/dpop/nonce.key"
 )
 ```
@@ -115,11 +114,11 @@ gateway.
 
 ## Component 8A offline Converse verification
 
-The Bedrock adapter has its own optional SDK dependencies. From this directory:
+The Bedrock adapter uses the AWS SDK, which `uv sync` already installs. From
+this directory:
 
 ```sh
-.venv/bin/python -m pip install -r requirements-bedrock.txt
-.venv/bin/python -m pytest -q
+uv run python -m pytest -q
 ```
 
 Tests inject synthetic SDK clients or use botocore Stubber with explicit
@@ -149,7 +148,7 @@ require the separate review described in the Component 8 design.
 With the lab services stopped, run from this directory:
 
 ```sh
-.venv/bin/python manual_claude_check.py
+uv run python manual_claude_check.py
 ```
 
 Expect the installed Claude Code CLI to print `MOCK_OK`, followed by

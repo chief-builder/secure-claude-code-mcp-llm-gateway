@@ -11,8 +11,7 @@ From this directory, run these commands in a local terminal. Keep the shell
 open so the TLS path is available for cleanup.
 
 ```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-test.txt
+uv sync
 lab_home="${LAB_HOME:-$HOME/secure-claude-lab}"
 mkdir -p -m 700 "$lab_home"
 lab_work="$(mktemp -d "$lab_home/keycloak-tls.XXXXXX")"
@@ -32,7 +31,7 @@ Use the system browser with the lab profile active, or configure Python's
 `BROWSER` setting with a launcher for that profile.
 
 ```sh
-.venv/bin/python login.py --ca-file "$LAB_TLS_DIR/ca.pem"
+uv run python login.py --ca-file "$LAB_TLS_DIR/ca.pem"
 ```
 
 Sign in as `synthetic-employee` with `synthetic-local-only`. The terminal prints
@@ -43,7 +42,7 @@ login and closes the callback. Keep production credentials out of the lab.
 ## Verify and clean up
 
 ```sh
-.venv/bin/python -m pytest -q
+uv run python -m pytest -q
 docker compose down
 ```
 

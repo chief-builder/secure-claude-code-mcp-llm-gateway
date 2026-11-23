@@ -74,14 +74,14 @@ change to `oauth-as` requires rerunning all three suites.
 Run tests from each component directory:
 
 ```sh
-cd components/oauth-lab && .venv/bin/python -m pytest -q
-cd components/oauth-as  && .venv/bin/python -m pytest -q
-cd components/gateway   && .venv/bin/python -m pytest -q
-cd components/broker    && .venv/bin/python -m pytest -q
-cd components/mock-llm  && ../../.venv/bin/python -m pytest -q
+uv sync
+for c in mock-llm oauth-lab oauth-as gateway broker; do
+  (cd components/$c && uv run python -m pytest -q)
+done
 ```
 
-`mock-llm` uses the virtual environment at the repository root. Without
+All components share one environment defined by the root `pyproject.toml`
+and `uv.lock`. Change dependencies there and run `uv lock`. Without
 `LAB_TLS_DIR`, 11 live Keycloak tests skip. Without
 `SECURE_SIGNER_TEST_BINARY`, 6 hardware signer tests skip. Report skipped
 tests as skipped, not passed.

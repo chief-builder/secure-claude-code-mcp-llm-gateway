@@ -9,9 +9,8 @@ covers those services.
 From this directory, install the lab dependencies and run the tests.
 
 ```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-test.txt
-.venv/bin/python -m pytest -q
+uv sync
+uv run python -m pytest -q
 ```
 
 ## Browser-to-Claude Code check
@@ -31,7 +30,7 @@ synthetic exchange client's private key under that directory.
   install -m 600 "${as_work:?Set the AS lab directory}/exchanger/assertion.key" \
     "$broker_work/assertion.key"
 
-  .venv/bin/python broker.py "$broker_work" \
+  uv run python broker.py "$broker_work" \
     --keycloak-ca "${LAB_TLS_DIR:?Set the Keycloak TLS directory}/ca.pem" \
     --as-ca "${as_tls:?Set the current AS TLS directory}/ca.pem" \
     --gateway-ca "${gateway_work:?Set the gateway lab directory}/tls/ca.pem"

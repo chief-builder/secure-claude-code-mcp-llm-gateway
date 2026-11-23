@@ -23,7 +23,7 @@ To run the hardware and broker tests, use the broker's Python environment.
 
 ```sh
 SECURE_SIGNER_TEST_BINARY="$PWD/.env.native/secure-signer" \
-  .venv/bin/python -m pytest -q
+  uv run python -m pytest -q
 ```
 
 The helper polls the current console-session dictionary every 250 ms and
