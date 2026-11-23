@@ -70,8 +70,9 @@ proof for every request. The gateway is the only party with AWS credentials.
 
 ## Running the lab
 
-You need macOS, Python 3.12 or newer, Docker, OpenSSL, and the Claude Code
-CLI. The Secure Enclave helper also needs Apple's command-line tools.
+You need macOS, Python 3.12 or newer, [uv](https://docs.astral.sh/uv/),
+Docker, OpenSSL, and the Claude Code CLI. Run `uv sync` once at the repository
+root; all components share that environment. The Secure Enclave helper also needs Apple's command-line tools.
 
 Each component has its own README with setup and verification steps. Follow
 them in this order, because each one builds on the services before it:
@@ -87,8 +88,8 @@ Keys, certificates and replay databases are created under
 
 ### Tests
 
-Run `.venv/bin/python -m pytest -q` in a component directory after installing
-its `requirements-test.txt` (`requirements.txt` for `mock-llm`).
+Run `uv run python -m pytest -q` in a component directory. Continuous
+integration runs the offline tests on every push.
 
 | Suite | Runs offline | Needs a live dependency |
 |---|---|---|
@@ -183,8 +184,10 @@ Two honest gaps:
   for them is one commit per directory and does not show the step-by-step
   process the documents describe.
 - Preparation for publication, including an independent code review, was done
-  with Claude Code 2.1.330 and Claude Fable 5.2. Checked-in agent permissions
-  and continuous integration are planned and not yet present.
+  with Claude Code 2.1.330 and Claude Fable 5.2. The agent's
+  permissions are checked in at [`.claude/settings.json`](.claude/settings.json),
+  and [continuous integration](.github/workflows/ci.yml) runs the offline
+  tests and a secret scan.
 
 ## License
 
