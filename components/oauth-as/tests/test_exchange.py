@@ -614,24 +614,3 @@ def test_dpop_exchange_token_authorizes_gateway_invocation(profile, local, monke
                 assert "dpop" not in calls[0].headers
 
     asyncio.run(check())
-
-
-@pytest.mark.parametrize(("current", "legacy"), [
-    ("auth-server-token-exchange-replay.sqlite3", "exchange-replay.sqlite3"),
-    ("llm-gateway-request-proof-replay.sqlite3", "gateway-replay.sqlite3"),
-])
-def test_replay_database_name_preserves_existing_state(tmp_path, current, legacy):
-    from exchange import ReplayStore
-    from foundation import FoundationError
-
-    tmp_path.chmod(0o700)
-    original = ReplayStore(tmp_path, legacy, legacy_filename=legacy + ".unused")
-    original.reserve("spent", int(time.time()) + 30, ValueError("duplicate"), lambda _: None)
-    current_store = ReplayStore(tmp_path, current, legacy_filename=legacy)
-    assert current_store.path == original.path
-    with pytest.raises(ValueError, match="duplicate"):
-        current_store.reserve("spent", int(time.time()) + 30, ValueError("duplicate"), lambda _: None)
-
-    (tmp_path / current).touch()
-    with pytest.raises(FoundationError, match="Multiple replay databases"):
-        ReplayStore(tmp_path, current, legacy_filename=legacy)

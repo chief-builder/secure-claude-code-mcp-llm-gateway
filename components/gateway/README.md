@@ -109,11 +109,9 @@ serving again so previously issued nonces cannot be accepted with empty
 state. To return to the bearer profile, restart both services without their
 DPoP options and run the probe without `--dpop`.
 
-New lab directories use `auth-server-token-exchange-replay.sqlite3` for the
+The replay databases are `auth-server-token-exchange-replay.sqlite3` for the
 authorization server and `llm-gateway-request-proof-replay.sqlite3` for the
-gateway. An existing directory continues to use its original database
-filename. If both names exist for one service, startup fails so the service
-cannot accidentally select a different replay history.
+gateway.
 
 ## Component 8A offline Converse verification
 

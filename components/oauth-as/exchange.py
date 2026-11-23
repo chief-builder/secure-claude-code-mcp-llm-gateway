@@ -91,18 +91,11 @@ def digest(*parts):
 
 
 class ReplayStore:
-    def __init__(self, directory, filename=AS_REPLAY_DATABASE, *,
-                 legacy_filename="exchange-replay.sqlite3"):
+    def __init__(self, directory, filename=AS_REPLAY_DATABASE):
         info = directory.lstat()
         if info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) != 0o700 or not stat.S_ISDIR(info.st_mode):
             raise FoundationError("Invalid replay directory")
         self.path = directory / filename
-        legacy_path = directory / legacy_filename
-        # Reuse the existing database in place so running workers keep the same replay state.
-        if os.path.lexists(legacy_path):
-            if os.path.lexists(self.path):
-                raise FoundationError("Multiple replay databases in the same directory")
-            self.path = legacy_path
         fd = os.open(self.path, os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_RDONLY, 0o600)
         with os.fdopen(fd, "rb") as handle:
             info = os.fstat(handle.fileno())
