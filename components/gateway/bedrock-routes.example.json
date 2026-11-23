@@ -1,0 +1,11 @@
+{
+  "lab-claude-text": {
+    "region": "<approved-region>",
+    "model_id": "<approved-Claude-model-ID-or-inference-profile-ARN>",
+    "resource_arns": ["<reviewed-IAM-resource-ARN>"],
+    "capabilities": ["text_input", "text_output", "converse", "converse_stream"],
+    "max_output_tokens": 128,
+    "allowed_parameters": ["max_tokens", "stop_sequences"],
+    "route_version": "lab-route-1"
+  }
+}
