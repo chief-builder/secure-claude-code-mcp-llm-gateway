@@ -232,6 +232,30 @@ def test_mock_transport_error(lab, failure, status):
     lab.run(check)
 
 
+def test_stream_failure_after_start_sends_error_event(lab, caplog):
+    caplog.set_level(logging.INFO, logger="uvicorn.error")
+
+    class Broken(Bytes):
+        async def __aiter__(self):
+            yield b"event: message_start\n\n"
+            raise httpx.ReadError("upstream-canary")
+
+    async def check(client):
+        lab.mock_response = lambda _: httpx.Response(
+            200, stream=Broken(), headers={"content-type": "text/event-stream"})
+        response = await client.post("/v1/messages", json={**REQUEST, "stream": True},
+                                     headers={"authorization": f"Bearer {lab.token()}"})
+        assert response.status_code == 200
+        first, _, last = response.text.partition("event: error\ndata: ")
+        assert first == "event: message_start\n\n\n\n"
+        assert json.loads(last) == {"type": "error", "error": {
+            "type": "api_error", "message": "Invalid or unavailable inference upstream"}}
+        assert "message_stop" not in response.text and "upstream-canary" not in response.text
+
+    lab.run(check)
+    assert "event=mock_failed" in caplog.text
+
+
 def test_stream_backpressure_and_disconnect(monkeypatch, caplog):
     caplog.set_level(logging.INFO, logger="uvicorn.error")
 
@@ -310,7 +334,9 @@ def test_overall_deadline_before_and_after_headers(lab, monkeypatch, caplog):
                                          json={**REQUEST, "stream": streamed})
             assert response.status_code == (200 if streamed else 504)
             if streamed:
-                assert response.content == b"partial"
+                partial, _, error = response.content.partition(b"\n\nevent: error\ndata: ")
+                assert partial == b"partial"
+                assert json.loads(error)["error"]["message"] == "Inference upstream timed out"
             assert body.closed
         assert caplog.text.count("event=mock_timeout") == 2
 

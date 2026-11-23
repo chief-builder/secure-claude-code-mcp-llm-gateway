@@ -258,6 +258,19 @@ class Invocation(Response):
                 started = True
             await send(message)
 
+        async def fail(failure):
+            if not started:
+                await error_response(failure, self.request_id)(scope, receive, send)
+                return
+            # Headers are already sent, so tell a streaming client the response is incomplete.
+            # The blank line ends any event the upstream left unfinished.
+            body = b""
+            if self.stream:
+                kind, message = ERRORS[failure.status]
+                body = b"\n\nevent: error\ndata: " + json.dumps(
+                    {"type": "error", "error": {"type": kind, "message": message}}).encode() + b"\n\n"
+            await send({"type": "http.response.body", "body": body, "more_body": False})
+
         async def forward():
             nonlocal event
             try:
@@ -265,17 +278,11 @@ class Invocation(Response):
                     await self.forward(scope, receive, track_send)
             except Failure as failure:
                 event = failure.event
-                if not started:
-                    await error_response(failure, self.request_id)(scope, receive, send)
-                else:
-                    await send({"type": "http.response.body", "body": b"", "more_body": False})
+                await fail(failure)
             except (TimeoutError, httpx.HTTPError) as exc:
                 status = 504 if isinstance(exc, (TimeoutError, httpx.TimeoutException)) else 502
                 event = f"{self.upstream_name}_timeout" if status == 504 else f"{self.upstream_name}_failed"
-                if not started:
-                    await error_response(Failure(status, event), self.request_id)(scope, receive, send)
-                else:
-                    await send({"type": "http.response.body", "body": b"", "more_body": False})
+                await fail(Failure(status, event))
 
         async def wait_disconnect():
             while (await receive())["type"] != "http.disconnect":
@@ -374,9 +381,7 @@ def create_app(as_ca, mock_credential, *, trust_transport=None, mock_transport=N
             if dpop:
                 app.state.verifier = Verifier("https://127.0.0.1:8082/v1/messages",
                                               nonce_key(dpop_nonce_key))
-                app.state.replay = ReplayStore(
-                    dpop_replay_dir, GATEWAY_REPLAY_DATABASE, legacy_filename="gateway-replay.sqlite3",
-                )
+                app.state.replay = ReplayStore(dpop_replay_dir, GATEWAY_REPLAY_DATABASE)
             app.state.trust = Trust(authority, dpop=dpop)
             app.state.mock = mock
             yield
