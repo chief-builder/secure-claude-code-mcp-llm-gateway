@@ -138,6 +138,9 @@ its `requirements-test.txt` (`requirements.txt` for `mock-llm`).
   ([evidence](docs/component-06/debugger-extraction-verification.md)).
 - **The Secure Enclave helper is an unsigned local build** and detects screen
   lock by polling every 250 ms.
+- **Matched stop sequences are untested against live Bedrock.** The adapter
+  asks Converse for the matched sequence and returns it, but only offline
+  tests cover this.
 - **No mutual TLS.** The live Bedrock run reached the gateway through SSH
   forwarding with server-verified HTTPS inside it.
 - **Addresses and ports are fixed** to loopback: 8080 (Keycloak), 8081
@@ -156,7 +159,9 @@ Checks that were planned but not completed:
 ## How this was built
 
 The project was built with AI coding assistants under a gated workflow, and
-the repository keeps the evidence.
+the repository keeps the evidence. Components 1–8 were built with Codex
+(ChatGPT, powered by Codex & OWL, version 26.1027.51404) using
+GPI 6.1 Sol (light).
 
 - **The agent works to written rules.** [`AGENTS.md`](AGENTS.md) sets the
   sequence Design → Review → Approve → Implement → Test → Accept and forbids
