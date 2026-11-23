@@ -83,7 +83,24 @@ def test_mapping():
     assert args == {"modelId": "synthetic.claude",
                     "messages": [{"role": "user", "content": [{"text": "prompt-canary"}]}],
                     "system": [{"text": "synthetic"}],
-                    "inferenceConfig": {"maxTokens": 32, "temperature": 0.5, "stopSequences": ["stop"]}}
+                    "inferenceConfig": {"maxTokens": 32, "temperature": 0.5, "stopSequences": ["stop"]},
+                    "additionalModelResponseFieldPaths": ["/stop_sequence"]}
+    assert "additionalModelResponseFieldPaths" not in bedrock.prepare(
+        json.dumps(payload()).encode(), routes())[1]
+
+
+@pytest.mark.parametrize(("extra", "expected"), [
+    ({"stop_sequence": "stop"}, "stop"), ({"stop_sequence": "unrequested"}, None),
+    ({"stop_sequence": ["stop"]}, None), ({}, None), (None, None),
+])
+def test_matched_stop_sequence(extra, expected):
+    stop = {"stopReason": "stop_sequence", "additionalModelResponseFields": extra}
+    chunks = b"".join(bedrock.stream_events(events()[:-2] + [{"messageStop": stop}, events()[-1]],
+                                            "alias", "id", ["stop"]))
+    delta = json.loads(chunks.split(b"event: message_delta\ndata: ")[1].split(b"\n")[0])
+    assert delta["delta"] == {"stop_reason": "stop_sequence", "stop_sequence": expected}
+    assert bedrock.matched_stop("stop_sequence", extra, ["stop"]) == expected
+    assert bedrock.matched_stop("end_turn", extra, ["stop"]) is None
 
 
 @pytest.mark.parametrize("streamed", [False, True])

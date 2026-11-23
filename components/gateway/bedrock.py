@@ -134,6 +134,9 @@ def prepare(body, routes):
         args["additionalModelRequestFields"] = json.loads(json.dumps(route["additional_model_request_fields"]))
     if "system" in data:
         args["system"] = text_blocks(data["system"])
+    if data.get("stop_sequences"):
+        # Converse returns the matched sequence only when asked for it.
+        args["additionalModelResponseFieldPaths"] = ["/stop_sequence"]
     return alias, args, data.get("stream", False)
 
 
@@ -166,18 +169,23 @@ def sse(event, **fields):
     return b"event: " + event.encode() + b"\ndata: " + packed({"type": event, **fields}) + b"\n\n"
 
 
-def message(alias, identity, content, stop, tokens):
+def matched_stop(reason, extra, requested):
+    value = extra.get("stop_sequence") if isinstance(extra, dict) else None
+    return value if reason == "stop_sequence" and value in requested else None
+
+
+def message(alias, identity, content, stop, tokens, sequence=None):
     if stop not in STOP:
         raise AdapterError(502)
     return {"id": identity, "type": "message", "role": "assistant", "model": alias,
-            "content": content, "stop_reason": STOP[stop], "stop_sequence": None, "usage": tokens}
+            "content": content, "stop_reason": STOP[stop], "stop_sequence": sequence, "usage": tokens}
 
 
-def stream_events(events, alias, identity):
+def stream_events(events, alias, identity, requested=()):
     started = stopped = metadata = False
     active = None
     next_index = 0
-    reason = None
+    reason = sequence = None
     for event in events:
         if not isinstance(event, dict) or len(event) != 1:
             raise AdapterError(502)
@@ -221,12 +229,13 @@ def stream_events(events, alias, identity):
             reason = value.get("stopReason")
             if reason not in STOP:
                 raise AdapterError(502)
+            sequence = matched_stop(reason, value.get("additionalModelResponseFields"), requested)
             stopped = True
         elif kind == "metadata" and stopped and not metadata:
             tokens = usage(value.get("usage"))
             metadata = True
             # Update input usage after Bedrock supplies its trailing metadata.
-            yield sse("message_delta", delta={"stop_reason": reason, "stop_sequence": None}, usage=tokens)
+            yield sse("message_delta", delta={"stop_reason": reason, "stop_sequence": sequence}, usage=tokens)
         else:
             raise AdapterError(502)
     if not (started and stopped and metadata):
@@ -318,6 +327,7 @@ class BedrockTransport(httpx.AsyncBaseTransport):
         queue = asyncio.Queue(maxsize=2)
         stopped = threading.Event()
         route = self.routes[alias]
+        requested = args["inferenceConfig"].get("stopSequences", ())
         identity = "msg_" + uuid.uuid4().hex
         gateway_id = request.headers.get("x-gateway-request-id", "")
 
@@ -350,13 +360,15 @@ class BedrockTransport(httpx.AsyncBaseTransport):
                              alias, route["route_version"], gateway_id, request_id)
                 if streamed:
                     events = result["stream"]
-                    chunks = stream_events(events, alias, identity)
+                    chunks = stream_events(events, alias, identity, requested)
                 else:
                     output = result["output"]["message"]
                     if output["role"] != "assistant":
                         raise AdapterError(502)
+                    sequence = matched_stop(result["stopReason"],
+                                            result.get("additionalModelResponseFields"), requested)
                     chunks = [packed(message(alias, identity, output_blocks(output["content"]),
-                                              result["stopReason"], usage(result["usage"])))]
+                                              result["stopReason"], usage(result["usage"]), sequence))]
                 size = 0
                 for chunk in chunks:
                     size += len(chunk)
