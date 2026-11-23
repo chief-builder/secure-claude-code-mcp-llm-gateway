@@ -60,7 +60,7 @@ def exchange_token(args, subject, proof, *, signing_key=None):
         for attempt in range(2):
             now = int(time.time())
             assertion = jwt.encode(
-                {"iss": CLIENT, "sub": CLIENT, "aud": endpoint, "iat": now,
+                {"iss": CLIENT, "sub": CLIENT, "aud": ISSUER, "iat": now,
                  "exp": now + 30, "jti": secrets.token_urlsafe(24)},
                 key, algorithm="RS256", headers={"kid": kid},
             )

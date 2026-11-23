@@ -182,7 +182,8 @@ class Exchange:
             verify(token, self.client_keys[header["kid"]])
             jti = claims.get("jti")
             if (claims.get("iss") != CLIENT or claims.get("sub") != CLIENT
-                    or claims.get("aud") not in (ISSUER + "/token", [ISSUER + "/token"])
+                    # The issuer identifier is the only accepted audience (draft-ietf-oauth-rfc7523bis).
+                    or claims.get("aud") != ISSUER
                     or not isinstance(jti, str) or not re.fullmatch(r"[A-Za-z0-9_-]{22,128}", jti)
                     or not valid_times(claims, int(time.time()), 60, 60)):
                 raise ValueError

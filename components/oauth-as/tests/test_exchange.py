@@ -46,7 +46,7 @@ def profile(local, upstream_key):
             }, upstream_key, algorithm="RS256",
                 headers={"kid": public_jwk(upstream_key.public_key())["kid"]})
         assertion = jwt.encode({
-            "iss": CLIENT, "sub": CLIENT, "aud": ISSUER + "/token", "iat": now,
+            "iss": CLIENT, "sub": CLIENT, "aud": ISSUER, "iat": now,
             "exp": now + 30, "jti": secrets.token_urlsafe(24), **(client_claims or {}),
         }, client_key, algorithm="RS256", headers={"kid": registered["kid"]})
         return {"grant_type": GRANT, "audience": TARGET, "scope": SCOPE,
@@ -138,7 +138,9 @@ def test_bad_requests_and_client_consumption(profile, upstream_key):
             bad_scope = {**form(), "scope": "bad"}
             rejected(await client.post("/token", data=bad_scope), "invalid_scope")
             rejected(await client.post("/token", data={**bad_scope, "scope": SCOPE}), "invalid_client")
-            for request in (form(client_key=upstream_key), form(client_claims={"aud": ISSUER}),
+            for request in (form(client_key=upstream_key), form(client_claims={"aud": ISSUER + "/token"}),
+                            form(client_claims={"aud": [ISSUER]}),
+                            form(client_claims={"aud": [ISSUER, ISSUER + "/token"]}),
                             form(client_claims={"exp": int(time.time()) - 1})):
                 rejected(await client.post("/token", data=request), "invalid_client")
             headers = {"Content-Type": "application/x-www-form-urlencoded"}

@@ -60,7 +60,7 @@ def probe(args):
         def send(subject):
             now = int(time.time())
             assertion = jwt.encode(
-                {"iss": CLIENT, "sub": CLIENT, "aud": ISSUER + "/token",
+                {"iss": CLIENT, "sub": CLIENT, "aud": ISSUER,
                  "iat": now, "exp": now + 30, "jti": secrets.token_urlsafe(24)},
                 key, algorithm="RS256", headers={"kid": kid},
             )
