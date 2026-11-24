@@ -87,7 +87,7 @@ unrelated lab directories. Accepted: the quickstart creates uniquely named
 directories and cannot collide with them.
 
 **Link check.** A one-off script resolved every relative link and heading anchor in
-all Markdown files. Final output: `62 files, 245 relative links checked, 0 broken`.
+all Markdown files. Final output: `61 files, 245 relative links checked, 0 broken`.
 The script is not kept; a standing check in CI is on the backlog.
 
 **Verifier findings and what was done.**
