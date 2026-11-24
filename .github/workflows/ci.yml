@@ -29,6 +29,10 @@ jobs:
 
   secrets:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # The scanner lists a pull request's commits to decide what to scan.
+      pull-requests: read
     steps:
       - uses: actions/checkout@v7
         with:
