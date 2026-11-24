@@ -17,7 +17,7 @@ Target: not set · Theme: a reference others can follow
 
 | Task | Capability | Status | Artifacts |
 |------|------------|--------|-----------|
-| improve-documentation | Documentation | backlog | [workflow/releases/next/improve-documentation/](releases/) |
+| improve-documentation | Documentation | in-progress | [workflow/releases/next/improve-documentation/](releases/next/improve-documentation/) |
 
 ## Next release (tentative)
 
