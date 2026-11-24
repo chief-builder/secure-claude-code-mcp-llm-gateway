@@ -129,3 +129,21 @@ sequenceDiagram
     D-->>A: Subject already spent
     A-->>C: HTTP 400 invalid_request
 ```
+
+## Live rerun after publication changes — 2026-11-23
+
+After acceptance, the client assertion audience changed from the token
+endpoint URL to the AS issuer identifier, the replay database legacy filename
+handling was removed, and all components moved to one `uv` environment. The
+assistant provisioned a fresh lab under `~/secure-claude-lab` from the README
+commands and ran the checks below. The owner completed each browser sign-in.
+
+| Check | Result |
+|---|---|
+| Listeners | The mock, AS and gateway listened on IPv4 loopback only. |
+| DPoP probe (`lab_invoke.py --dpop`) | Printed `component_05_succeeded`. The AS logged one nonce challenge and one successful exchange. The gateway logged one nonce challenge and two successful invocations (JSON and SSE). |
+| Broker with the Secure Enclave signer and the installed Claude Code CLI | Exit 0 and `MOCK_OK`. The AS logged a nonce challenge and a successful exchange. The broker's two gateway request IDs matched the gateway's nonce challenge and success events. |
+
+Not covered: the Bedrock backend, so the adapter's matched stop sequence
+remains verified by offline tests only. The helper binary was the existing
+local build and was not rebuilt.
