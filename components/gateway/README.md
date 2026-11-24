@@ -1,170 +1,132 @@
-# Component 4 lab gateway
+# LLM gateway
 
-Use only the synthetic lab identity and disposable credentials. Run from this
-directory with Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
+## What it is
 
-```sh
-uv sync
-uv run python -m pytest -q
-```
+The service in front of the model, at `https://127.0.0.1:8082`. It accepts Anthropic
+Messages requests, checks the caller's access token and DPoP proof, and forwards the
+request to the mock or to Amazon Bedrock. It is the only component that holds
+credentials for the model backend. This directory covers Component 4 (token checks
+and policy), the gateway side of Component 5 (DPoP proofs, nonces and replay) and
+Component 8 (the Bedrock adapter).
 
-## Run the browser-to-mock check
+## Run it
 
-1. Start [Keycloak](../oauth-lab/README.md) and the
-   [exchange-enabled authorization server](../oauth-as/README.md). Verify the
-   Keycloak discovery endpoint using the Keycloak lab CA. If a lab certificate
-   has expired, provision fresh lab TLS and update the corresponding CA
-   paths before proceeding. The imported synthetic subject must match the AS
-   exchange policy.
-2. Generate the gateway TLS files and a separate mock credential in an
-   owner-only lab directory. From the gateway directory, run:
+The [quickstart](../../docs/quickstart.md) creates the gateway's certificate, mock
+credential and nonce key (step 2) and starts the mock and the gateway with DPoP
+(step 4). The commands below assume its lab paths are loaded, and that Keycloak, the
+authorization server and the mock are running. Port 8082 must be free.
 
-   ```sh
-   lab_home="${LAB_HOME:-$HOME/secure-claude-lab}"
-   mkdir -p -m 700 "$lab_home"
-   gateway_work="$(mktemp -d "$lab_home/gateway.XXXXXX")"
-   sh ../oauth-lab/make-lab-tls.sh "$gateway_work/tls"
-   (umask 077
-    uv run python -c 'import secrets; print(secrets.token_urlsafe(32))' > "$gateway_work/mock.token")
-   printf '%s\n' "$gateway_work"
-   ```
+### DPoP profile
 
-3. In a second terminal, from the gateway directory, set `gateway_work`
-   to the printed path and start the mock on IPv4 loopback.
-
-   ```sh
-   MOCK_LLM_TOKEN="$(cat "$gateway_work/mock.token")" \
-     uv run python -m uvicorn app.main:app --app-dir ../mock-llm \
-     --host 127.0.0.1 --port 8765 --no-access-log
-   ```
-
-4. In the gateway terminal, set `as_work` to the Component 3 lab directory
-   and start the gateway.
-
-   ```sh
-   GATEWAY_MOCK_TOKEN="$(cat "$gateway_work/mock.token")" \
-     uv run python gateway.py --as-ca "$as_work/tls/ca.pem" \
-     --tls-cert "$gateway_work/tls/server.pem" --tls-key "$gateway_work/tls/server.key"
-   ```
-
-5. In another terminal, from the gateway directory, set `gateway_work`,
-   `as_work`, and `LAB_TLS_DIR` to the same lab paths and run the probe.
-
-   ```sh
-   uv run python lab_invoke.py "$as_work/exchanger" \
-     --keycloak-ca "$LAB_TLS_DIR/ca.pem" --as-ca "$as_work/tls/ca.pem" \
-     --gateway-ca "$gateway_work/tls/ca.pem"
-   ```
-
-   Sign in with the synthetic employee in the lab browser profile. The
-   probe expects the mock text in both JSON and SSE, plus the SSE
-   `message_stop` event. It prints `component_04_succeeded` on success.
-   Check the gateway terminal for two `invocation_succeeded` events with
-   distinct request IDs. Verify the listener with
-   `lsof -nP -iTCP:8082 -sTCP:LISTEN`.
-
-## Enable Component 5 DPoP
-
-Run the DPoP profile in the same synthetic lab after checking the current
-Keycloak, AS and gateway certificates. Use the lab paths above. The AS and
-gateway each need their own nonce authentication key. Generate the files
-once for a DPoP lab run.
+This is the profile the quickstart starts. The authorization server must also be
+running with its `--dpop-nonce-key` option.
 
 ```sh
-(
-  set -euC
-  umask 077
-  : "${as_work:?Set the authorization-server lab directory}"
-  : "${gateway_work:?Set the gateway lab directory}"
-  mkdir -p "$gateway_work/dpop"
-  chmod 700 "$gateway_work/dpop"
-  uv run python -c 'import secrets,sys; sys.stdout.buffer.write(secrets.token_bytes(32))' \
-    > "$as_work/keys/dpop-nonce.key"
-  uv run python -c 'import secrets,sys; sys.stdout.buffer.write(secrets.token_bytes(32))' \
-    > "$gateway_work/dpop/nonce.key"
-)
+GATEWAY_MOCK_TOKEN="$(cat "$gateway_work/mock.token")" \
+  uv run python gateway.py \
+  --as-ca "$as_work/tls/ca.pem" \
+  --tls-cert "$gateway_work/tls/server.pem" \
+  --tls-key "$gateway_work/tls/server.key" \
+  --dpop-nonce-key "$gateway_work/dpop/nonce.key" \
+  --dpop-replay-dir "$gateway_work/dpop"
 ```
 
-Stop the existing AS and gateway before starting the DPoP profile on the
-same ports. Leave Keycloak and the mock running. Add these options to the
-existing commands.
-
-| Service | Additional options |
-|---|---|
-| Authorization server | `--dpop-nonce-key "$as_work/keys/dpop-nonce.key"` alongside `--exchange-policy` |
-| Gateway | `--dpop-nonce-key "$gateway_work/dpop/nonce.key" --dpop-replay-dir "$gateway_work/dpop"` |
-| Invocation probe | `--dpop` alongside the existing CA options |
-
-Expect `component_05_succeeded`. The probe completes each endpoint's nonce
-challenge, verifies the AS-signed token and its key binding, and verifies
-JSON and SSE using fresh request proofs. In the server logs, expect an AS
-nonce challenge and successful exchange, then a gateway nonce challenge
-and two successful invocations. The probe keeps credentials in memory and
-prints only its outcome.
-
-Keep each service's nonce key and replay database together across restarts.
-If replay state is lost or reset, replace that service's nonce key before
-serving again so previously issued nonces cannot be accepted with empty
-state. To return to the bearer profile, restart both services without their
-DPoP options and run the probe without `--dpop`.
-
-The replay databases are `auth-server-token-exchange-replay.sqlite3` for the
-authorization server and `llm-gateway-request-proof-replay.sqlite3` for the
-gateway.
-
-## Component 8A offline Converse verification
-
-The Bedrock adapter uses the AWS SDK, which `uv sync` already installs. From
-this directory:
+Exercise it from another terminal with the probe, and sign in with the synthetic
+user when the browser opens:
 
 ```sh
-uv run python -m pytest -q
+uv run python lab_invoke.py "$as_work/exchanger" \
+  --keycloak-ca "$LAB_TLS_DIR/ca.pem" --as-ca "$as_work/tls/ca.pem" \
+  --gateway-ca "$gateway_work/tls/ca.pem" --dpop
 ```
 
-Tests inject synthetic SDK clients or use botocore Stubber with explicit
-synthetic credentials. They exercise the normal DPoP gateway route, JSON
-translation and SSE completion without resolving AWS credentials or calling
-Bedrock. The existing mock profile remains the default.
+It prints `component_05_succeeded`. The probe completes each service's nonce
+challenge, checks the issued token and its key binding, and makes one JSON and one
+streaming call with fresh proofs. The authorization server logs a nonce challenge
+and a successful exchange; the gateway logs a nonce challenge and two
+`invocation_succeeded` events with different request IDs.
 
-`bedrock-routes.example.json` documents the configuration shape. Its
-placeholders intentionally fail validation. For stage 8B, replace them with
-the reviewed alias, Region, model and IAM resources on the isolated AWS host.
-The backend selects a refreshing EC2 instance-role provider and disables
-SDK retries, environment proxies and configured endpoint overrides.
+### Bearer profile
 
-The Bedrock-specific additions to the gateway launch command are:
+To see the gateway without DPoP, stop the authorization server and the gateway and
+start both without their DPoP options: the authorization server without
+`--dpop-nonce-key`, and the gateway without `--dpop-nonce-key` and
+`--dpop-replay-dir`. Then run the probe without `--dpop`. It prints
+`component_04_succeeded`. Both services must use the same profile; the gateway
+refuses to trust an authorization server whose DPoP setting differs from its own.
+
+### Bedrock backend
+
+The Bedrock backend replaces the mock with Amazon Bedrock's Converse API. It needs
+the DPoP profile and a routes file, and is meant to run on an AWS host with an
+instance role:
 
 ```sh
 --backend bedrock --bedrock-routes /absolute/path/to/reviewed-routes.json
 ```
 
-Supply the existing required DPoP and TLS options. The local mock profile
-uses its separate mock credential. The Bedrock profile uses the workload
-role. Stage 8B's remote endpoints, tunnel, deployment and live cost plan
-require the separate review described in the Component 8 design.
+[`bedrock-routes.example.json`](bedrock-routes.example.json) shows the shape of that
+file. Its placeholders fail validation on purpose; replace them with a reviewed
+model alias, Region, model and IAM resources. The live deployment, its transport
+and its cost plan are described in the
+[Component 8 design](../../docs/component-08/design-spec.md). Nothing in this
+repository calls AWS unless you start the gateway this way on a host with AWS
+credentials.
 
-## Actual Claude Code offline text check
+### The real Claude Code CLI, offline
 
-With the lab services stopped, run from this directory:
+With the lab services stopped, this runs the installed Claude Code CLI through the
+broker's local listener, the DPoP gateway and the Bedrock adapter, using synthetic
+SDK responses. It needs no other servers, no browser and no AWS credentials:
 
 ```sh
 uv run python manual_claude_check.py
 ```
 
-Expect the installed Claude Code CLI to print `MOCK_OK`, followed by
-`Offline Claude Code adapter check passed`. A model-alias warning can
-appear because `lab-claude-text` is a synthetic route name. This is one
-non-interactive text invocation with tools disabled.
+Expect the CLI to print `MOCK_OK`, followed by
+`Offline Claude Code adapter check passed`. A model-alias warning can appear because
+`lab-claude-text` is a synthetic route name.
 
-The harness launches the actual CLI and the broker's temporary local listener.
-It uses the normal DPoP gateway and Converse conversion, with synthetic SDK
-responses and in-process signing-trust fixtures. No other servers or AWS
-credentials are needed. Browser sign-in, hardware signing and remote TLS are
-outside this specific check. Temporary credentials, replay files, local
-listener and child configuration are cleaned up on exit.
+## Test it
 
-The explicit broker `--text-only` profile supplies a 128-token cap, disables
-thinking and caching, omits effort and structured-output requests, and
-disables automatic CLI retries. The adapter validates and removes only
-empty/disabled feature fields and bounded client metadata. Active unsupported
-features remain rejected.
+```sh
+uv run python -m pytest -q
+```
+
+Expect 93 passed. All tests run offline. The Bedrock tests use injected SDK clients
+or the SDK's own stubber with synthetic credentials; they never resolve AWS
+credentials or call Bedrock.
+
+## How it works
+
+- [`gateway.py`](gateway.py) — credential parsing, access token validation, the
+  cached trust in the authorization server's keys, policy, request limits, and
+  forwarding with cancellation and deadlines.
+- [`bedrock.py`](bedrock.py) — route validation, translation between Messages and
+  Converse for JSON and streaming, error mapping, and the instance-role client.
+- [`lab_invoke.py`](lab_invoke.py) — the probe, and the DPoP client the broker reuses.
+- [Gateway walkthrough](../../docs/concepts/gateway-walkthrough.md) follows one DPoP
+  request through the code.
+- Design specs: [Component 4](../../docs/component-04/design-spec.md),
+  [Component 5](../../docs/component-05/design-spec.md),
+  [Component 8](../../docs/component-08/design-spec.md).
+
+Keep the nonce key and the replay database
+(`llm-gateway-request-proof-replay.sqlite3`, in the `--dpop-replay-dir`) together
+across restarts. If the replay database is ever lost, replace the nonce key before
+serving again, so nonces issued earlier cannot be accepted against empty state.
+
+The broker's `--text-only` profile, used with the Bedrock backend, caps output at
+128 tokens and turns off thinking, prompt caching and automatic retries. The adapter
+strips only empty or disabled feature fields and bounded client metadata; any active
+unsupported feature is rejected.
+
+## Limits
+
+- Text only. Tool use, images, thinking and prompt caching are rejected by the
+  Bedrock adapter.
+- One Bedrock route, one request at a time, at most 128 output tokens.
+- Request and response bodies are capped at 1 MB, and a call at 60 seconds.
+- Returning the matched stop sequence from Bedrock is covered by offline tests only.
+- The address, audience and scope are fixed in code.
+- No mutual TLS. The live Bedrock run reached the gateway through SSH forwarding.

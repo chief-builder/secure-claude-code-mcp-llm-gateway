@@ -17,7 +17,7 @@ Executed suites
 - Component 1 mock — **8 passed**, with the existing Starlette TestClient deprecation warning
 
 The reviewer refreshed the AS lab TLS certificate before the live run.
-The [lab walkthrough](../../components/gateway/README.md#enable-component-5-dpop)
+The [lab walkthrough](../../components/gateway/README.md#dpop-profile)
 describes switching both services to the DPoP profile and running the browser
 check. Each service has an independent nonce key. Preserve it alongside the
 replay database during ordinary restarts. Rotate it before serving with newly

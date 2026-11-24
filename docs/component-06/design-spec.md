@@ -129,7 +129,7 @@ checks the signature with the registered RSA public key for the lab
 exchange client. This is the `private_key_jwt` authentication method.
 A separate P-256 key signs DPoP proofs and is the key bound to the gateway
 token. The RSA private key stays on the broker side of the connection.
-[Authorization-server signing and verification walkthrough](../component-05/auth-server-walkthrough.md#who-signs-and-who-verifies)
+[Authorization-server signing and verification walkthrough](../concepts/authorization-server-walkthrough.md#who-signs-and-who-verifies)
 
 The software key lives in the broker's process and the RSA file is protected
 by file ownership. Other code running as the same OS user may have access

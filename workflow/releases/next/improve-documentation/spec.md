@@ -1,7 +1,7 @@
 # Spec: improve-documentation
 
 Consumes: [intent.md](intent.md)
-Status: draft
+Status: **approved** (2026-11-24)
 
 **Behavior.** After this change the documentation has four clearly separate parts.
 
@@ -64,12 +64,6 @@ link repairs in existing documents whose targets move.
 - [ ] The verifier agent, given only the repository, reports no step in the
       quickstart that it could not follow or that was ambiguous.
 
-**Open questions.**
-
-1. Should the quickstart be a page only, or a page plus a helper script?
-   Recommended: page only.
-2. Should the two Component 5 walkthroughs move to `docs/concepts/`, or stay where
-   they are and only be linked from the index? Recommended: move, and repair the
-   three links that point at them.
-3. Should component and gate numbers disappear from README headings? Recommended:
-   yes, kept as a one-line reference, with links from frozen records repaired.
+**Open questions.** None. Decided at approval on 2026-11-24: the quickstart is a
+page only; the two Component 5 walkthroughs move to `docs/concepts/`; component and
+gate numbers leave the README headings.

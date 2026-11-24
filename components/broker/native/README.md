@@ -7,7 +7,7 @@ mkdir -p .env.native
 xcrun swiftc native/SecureSigner.swift -o .env.native/secure-signer
 ```
 
-Run the Component 6 broker command with this additional option.
+Run the [broker command](../README.md#run-it) with this additional option.
 
 ```sh
 --secure-signer "$PWD/.env.native/secure-signer"
@@ -29,8 +29,9 @@ SECURE_SIGNER_TEST_BINARY="$PWD/.env.native/secure-signer" \
 The helper polls the current console-session dictionary every 250 ms and
 before signing. On this Mac, the lock field is absent while unlocked. It
 requires an active, completed console login, treats an explicit lock flag
-as locked, and exits on lock or unavailable session information. This
-session check needs manual physical lock/unlock verification before Gate 7
-acceptance. Its polling interval creates a small observation window.
+as locked, and exits on lock or unavailable session information. A
+physical lock and unlock was checked during acceptance; see the
+[verification record](../../../docs/component-07/verification.md). The polling
+interval leaves a small observation window.
 The native program currently uses an unsigned local lab build. Production
 requires a separate signed deployment and caller-authorization review.

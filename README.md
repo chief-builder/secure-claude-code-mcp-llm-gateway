@@ -1,8 +1,8 @@
 # Secure Claude Code – MCP & LLM Gateway
 
 A reference implementation that connects Claude Code on macOS to AWS Bedrock
-through an LLM gateway, using OAuth 2.0 token exchange and sender-constrained
-(DPoP) access tokens. A stolen access token cannot be replayed without the
+through an LLM [gateway](docs/glossary.md#gateway), using OAuth 2.0 [token exchange](docs/glossary.md#token-exchange) and
+[sender-constrained](docs/glossary.md#sender-constrained-token) ([DPoP](docs/glossary.md#dpop-demonstrating-proof-of-possession)) access tokens. A stolen access token cannot be replayed without the
 client's private key, and AWS credentials never reach the developer laptop.
 
 > **This is a learning lab, not a product.** It runs with synthetic identities
@@ -17,13 +17,13 @@ the repository implements MCP yet.
 
 | Standard | Where it is used |
 |---|---|
-| OpenID Connect with PKCE ([RFC 7636](https://www.rfc-editor.org/rfc/rfc7636.html), [RFC 8252](https://www.rfc-editor.org/rfc/rfc8252.html)) | Browser sign-in against Keycloak |
-| Token exchange ([RFC 8693](https://www.rfc-editor.org/rfc/rfc8693.html)) | Keycloak ID token → short-lived gateway access token |
-| `private_key_jwt` client authentication ([RFC 7523](https://www.rfc-editor.org/rfc/rfc7523.html)) | Exchange client → authorization server |
-| JWT access tokens ([RFC 9068](https://www.rfc-editor.org/rfc/rfc9068.html)) | Authorization server → gateway |
-| DPoP with server nonces ([RFC 9449](https://www.rfc-editor.org/rfc/rfc9449.html)) | Token binding at the authorization server and proof per request at the gateway |
-| Apple Secure Enclave | Hardware-held DPoP signing key |
-| Amazon Bedrock Converse API | Inference behind the gateway, using an instance role |
+| [OpenID Connect](docs/glossary.md#openid-connect-oidc) with [PKCE](docs/glossary.md#pkce-proof-key-for-code-exchange) ([RFC 7636](https://www.rfc-editor.org/rfc/rfc7636.html), [RFC 8252](https://www.rfc-editor.org/rfc/rfc8252.html)) | Browser sign-in against Keycloak |
+| [Token exchange](docs/glossary.md#token-exchange) ([RFC 8693](https://www.rfc-editor.org/rfc/rfc8693.html)) | Keycloak ID token → short-lived gateway access token |
+| [`private_key_jwt` client authentication](docs/glossary.md#client-assertion-private_key_jwt) ([RFC 7523](https://www.rfc-editor.org/rfc/rfc7523.html)) | Exchange client → authorization server |
+| [JWT](docs/glossary.md#jwt-json-web-token) [access tokens](docs/glossary.md#access-token) ([RFC 9068](https://www.rfc-editor.org/rfc/rfc9068.html)) | Authorization server → gateway |
+| [DPoP](docs/glossary.md#dpop-demonstrating-proof-of-possession) with server [nonces](docs/glossary.md#nonce) ([RFC 9449](https://www.rfc-editor.org/rfc/rfc9449.html)) | Token binding at the authorization server and proof per request at the gateway |
+| Apple [Secure Enclave](docs/glossary.md#secure-enclave) | Hardware-held DPoP signing key |
+| Amazon [Bedrock Converse](docs/glossary.md#bedrock-converse) API | Inference behind the gateway, using an [instance role](docs/glossary.md#instance-role) |
 
 ## Architecture
 
@@ -56,7 +56,7 @@ proof for every request. The gateway is the only party with AWS credentials.
 
 ## Components
 
-| # | Component | Code | Design and evidence |
+| # | Component | Code and README | Design and evidence |
 |---|---|---|---|
 | 1 | Mock LLM (Anthropic Messages-compatible) | [`components/mock-llm`](components/mock-llm) | [docs](docs/component-01) |
 | 2A | Keycloak browser sign-in | [`components/oauth-lab`](components/oauth-lab) | [docs](docs/component-02) |
@@ -70,23 +70,24 @@ proof for every request. The gateway is the only party with AWS credentials.
 
 ## Running the lab
 
-You need macOS, Python 3.12 or newer, [uv](https://docs.astral.sh/uv/),
-Docker, OpenSSL, and the Claude Code CLI. Run `uv sync` once at the repository
-root; all components share that environment. The Secure Enclave helper also needs Apple's command-line tools.
+Follow the **[quickstart](docs/quickstart.md)**: one page from a fresh clone to
+Claude Code getting an answer through the whole path, in about ten minutes. You need
+macOS, Docker, Python 3.12 or newer, [uv](https://docs.astral.sh/uv/) and the Claude
+Code CLI.
 
-Each component has its own README with setup and verification steps. Follow
-them in this order, because each one builds on the services before it:
-
-1. [Keycloak sign-in](components/oauth-lab/README.md)
-2. [Authorization server and token exchange](components/oauth-as/README.md)
-3. [Gateway, DPoP and the Bedrock adapter](components/gateway/README.md)
-4. [Credential broker](components/broker/README.md)
-5. [Secure Enclave signer](components/broker/native/README.md)
-
-Keys, certificates and replay databases are created under
+Each component's README, linked in the table above, covers running and testing that
+part on its own. Keys, certificates and replay databases are created under
 `~/secure-claude-lab` (override with `LAB_HOME`), never inside the repository.
 
-### Tests
+## Documentation
+
+- [Quickstart](docs/quickstart.md) — run the lab.
+- [One request, end to end](docs/concepts/request-walkthrough.md) — how the parts
+  fit together.
+- [Glossary](docs/glossary.md) — every term, in plain language.
+- [Documentation index](docs/README.md) — all explanations and verification records.
+
+## Tests
 
 Run `uv run python -m pytest -q` in a component directory. Continuous
 integration runs the offline tests on every push.
