@@ -20,9 +20,10 @@ MOCK_LLM_TOKEN=local-mock-only \
 In another terminal:
 
 ```sh
+token=local-mock-only
 curl --silent http://127.0.0.1:8765/health && echo
 curl --silent http://127.0.0.1:8765/v1/messages \
-  -H 'authorization: Bearer local-mock-only' -H 'content-type: application/json' \
+  -H "authorization: Bearer $token" -H 'content-type: application/json' \
   -d '{"model":"any","max_tokens":16,"messages":[{"role":"user","content":"hi"}]}' && echo
 ```
 
