@@ -119,4 +119,7 @@ joined by dashes and share one name; decision records are
 - Shell blocks in the docs must not contain `#` comment lines: the default macOS shell
   rejects them when pasted. Prove a doc command by pasting it into an interactive
   shell, not by running it as a script.
+- The secret scan flags a literal credential in an example `curl` authorization
+  header, even a placeholder. Use a shell variable in examples. Known false positives
+  go in `.gitleaksignore`.
 - Lab certificates last 7 days. An expired certificate looks like a trust failure.
