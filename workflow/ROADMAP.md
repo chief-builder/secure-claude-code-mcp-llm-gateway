@@ -38,6 +38,9 @@ pruned without guilt.
 - Observe the operating system refusing to sign during screen lock, independently of the helper's own lock check (Sender-constrained access, filed: next)
 - Reconcile the final billed cost of the live Bedrock run and confirm the budget-alert email (Gateway and inference, filed: next)
 - Token refresh so the broker can serve an interactive Claude Code session longer than five minutes (Local credential broker, filed: next)
+- Check Markdown links and anchors in CI, so a renamed heading cannot silently break a link (Documentation, filed: next)
+- Replace the source-line links in the two code walkthroughs, which have drifted from the code, with links that do not go stale (Documentation, filed: next)
+- Reword the `component_03_succeeded` message that `lab_exchange.py init-client` prints during setup, where it reads like a test result (Sign-in and token issuance, filed: next)
 - Sign the Secure Enclave helper and decide how it authorizes its caller (Sender-constrained access, filed: next)
 
 ## Debt register

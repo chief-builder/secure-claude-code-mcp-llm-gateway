@@ -113,4 +113,7 @@ joined by dashes and share one name; decision records are
 - Every pull request gets two CI runs (push and pull request). Read every line of the
   check list before calling it green — a failing job has been missed this way once.
 - `astral-sh/setup-uv` has no floating major tag; pin a full release tag.
+- Docker can only mount files from folders it shares. A clone in a temporary or scratch
+  folder makes Keycloak fail with the realm file "Is a directory"; test clones go
+  under the home folder.
 - Lab certificates last 7 days. An expired certificate looks like a trust failure.
