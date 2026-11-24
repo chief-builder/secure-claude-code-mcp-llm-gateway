@@ -90,6 +90,9 @@ PY
 )
 ```
 
+The block prints OpenSSL's progress and one line reading `component_03_succeeded`,
+which is the exchange client's key being created. It ends with `Lab created`.
+
 Every terminal you open from here on starts by loading those paths:
 
 ```sh
@@ -109,7 +112,8 @@ curl --fail --silent --retry 40 --retry-delay 3 --retry-all-errors --max-time 5 
   && echo "Keycloak is ready"
 ```
 
-The first start downloads the Keycloak image and can take a minute or two.
+The first start downloads the Keycloak image and can take a minute or two. The
+check waits up to two minutes and prints nothing until Keycloak answers.
 
 ## 4. Start the three services
 
@@ -190,6 +194,7 @@ The broker then exchanges the token, launches Claude Code with one fixed prompt,
 exits. A successful run ends like this:
 
 ```text
+INFO broker event=software_signer_selected broker_request_id=…
 INFO broker event=login_succeeded broker_request_id=…
 INFO broker event=exchange_verified broker_request_id=…
 INFO broker event=gateway_nonce_required broker_request_id=… gateway_request_id=…
@@ -226,6 +231,8 @@ The certificates last seven days. After that, clean up and start again from step
 |---|---|
 | A service exits with "address already in use" | Something else holds the port. Find it with `lsof -nP -iTCP:8081 -sTCP:LISTEN` (change the number) and stop it |
 | `docker compose` says `Set LAB_TLS_DIR` | The paths are not loaded in this terminal. Run the `lab.env` line from step 2 |
+| Step 3 never prints `Keycloak is ready` | Keycloak did not start. Run `docker compose logs --tail 20` in `components/oauth-lab` to see why |
+| Keycloak's log says the realm file "Is a directory" | Docker cannot share the folder the repository is in. Move the clone under your home folder, or add its location to Docker's shared folders |
 | The authorization server exits with "pinned upstream trust unavailable" | Keycloak is not ready or not running. Repeat step 3 |
 | The broker prints only `session_failed` | Sign-in timed out or was cancelled, a service is down, or `claude` is not on your `PATH`. Check step 5, then run the broker again |
 | Everything worked last week and now fails on trust | The seven-day certificates expired. Clean up and start from step 2 |
