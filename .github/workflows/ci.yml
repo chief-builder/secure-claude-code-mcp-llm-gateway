@@ -1,0 +1,42 @@
+name: CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    # Offline suites only. Live Keycloak and Secure Enclave tests skip here.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --locked
+      - name: Run offline tests
+        run: |
+          set -e
+          for c in mock-llm oauth-lab oauth-as gateway broker; do
+            echo "== $c"
+            (cd "components/$c" && uv run --locked python -m pytest -q)
+          done
+
+  secrets:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # The scanner lists a pull request's commits to decide what to scan.
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

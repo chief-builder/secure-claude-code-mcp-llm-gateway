@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv sync)",
+      "Bash(uv run python -m pytest *)"
+    ],
+    "deny": [
+      "Read(**/*.key)",
+      "Read(**/*.pem)",
+      "Read(**/*.token)",
+      "Read(**/*.sqlite3)",
+      "Read(**/.env)",
+      "Read(**/.env.*/**)",
+      "Read(~/secure-claude-lab/**)"
+    ]
+  }
+}

@@ -19,7 +19,9 @@ app = FastAPI(
     description="Mock Anthropic-compatible LLM API for Claude Code testing",
 )
 
-MOCK_TOKEN = os.environ.get("MOCK_LLM_TOKEN", "local-mock-only")
+MOCK_TOKEN = os.environ.get("MOCK_LLM_TOKEN")
+if not MOCK_TOKEN:
+    raise RuntimeError("Set MOCK_LLM_TOKEN to a disposable mock credential")
 
 
 @app.get("/health")

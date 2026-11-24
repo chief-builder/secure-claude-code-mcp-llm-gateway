@@ -1,4 +1,3 @@
-cat > .gitignore <<'EOF'
 # Python
 __pycache__/
 *.py[cod]
@@ -21,9 +20,12 @@ __pycache__/
 *.p12
 *.pfx
 *.token
+*.sqlite3
 
 # Test artifacts
 .coverage
 htmlcov/
 logs/
-EOF
+
+# Claude Code personal overrides
+.claude/settings.local.json

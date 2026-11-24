@@ -1,0 +1,44 @@
+{
+  "realm": "claude-security-lab",
+  "enabled": true,
+  "sslRequired": "all",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "accessTokenLifespan": 300,
+  "accessCodeLifespan": 60,
+  "defaultSignatureAlgorithm": "RS256",
+  "clients": [
+    {
+      "clientId": "macos-oauth-client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://127.0.0.1:8766/callback"],
+      "defaultClientScopes": [],
+      "optionalClientScopes": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "exclude.issuer.from.auth.response": "false",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "oidc.ciba.grant.enabled": "false",
+        "standard.token.exchange.enabled": "false",
+        "use.refresh.tokens": "false"
+      }
+    }
+  ],
+  "users": [
+    {
+      "id": "9ae7b8d8-cb6a-49f3-924c-2d73c8bd5b95",
+      "username": "synthetic-employee",
+      "firstName": "Synthetic",
+      "lastName": "Employee",
+      "email": "employee@example.invalid",
+      "enabled": true,
+      "credentials": [{"type": "password", "value": "synthetic-local-only", "temporary": false}]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+name: secure-claude-component-02a
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.5
+    command:
+      - start-dev
+      - --import-realm
+      - --hostname=https://127.0.0.1:8080
+      - --http-enabled=false
+      - --https-certificate-file=/lab-tls/server.pem
+      - --https-certificate-key-file=/lab-tls/server.key
+      - --http-access-log-enabled=false
+    ports:
+      - "127.0.0.1:8080:8443"
+    volumes:
+      - ./realm.json:/opt/keycloak/data/import/claude-security-lab-realm.json:ro
+      - "${LAB_TLS_DIR:?Set LAB_TLS_DIR to the disposable TLS directory}:/lab-tls:ro"

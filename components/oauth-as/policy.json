@@ -1,0 +1,15 @@
+{
+  "exchange_enabled": false,
+  "issuance_enabled": false,
+  "candidate": {
+    "client_id": "lab-exchange-service",
+    "authentication": "private_key_jwt",
+    "client_jwks": "client-jwks.json",
+    "issuer": "https://127.0.0.1:8080/realms/claude-security-lab",
+    "subject_token_type": "urn:ietf:params:oauth:token-type:id_token",
+    "source_audience": "macos-oauth-client",
+    "authorized_party_if_present": "macos-oauth-client",
+    "target": "urn:lab:llm-gateway",
+    "scope": "llm:invoke"
+  }
+}
