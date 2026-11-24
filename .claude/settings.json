@@ -13,5 +13,18 @@
       "Read(**/.env.*/**)",
       "Read(~/secure-claude-lab/**)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block-force-push.sh"
+          }
+        ]
+      }
+    ]
   }
 }
