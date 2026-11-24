@@ -15,26 +15,17 @@ uv run python -m pytest -q
 
 ## Browser-to-Claude Code check
 
-Set `as_work` to the Component 3 lab directory, `as_tls` to its current TLS
-directory, `LAB_TLS_DIR` to the current Keycloak TLS directory, and
-`gateway_work` to the Component 4 gateway lab directory. Create a temporary
-owner-only directory outside the repository. The broker requires the existing
-synthetic exchange client's private key under that directory.
+Set `as_work` to the Component 3 lab directory, `LAB_TLS_DIR` to the Keycloak
+TLS directory, and `gateway_work` to the Component 4 gateway lab directory.
+The broker reads the synthetic exchange client's private key from
+`$as_work/exchanger`, which must be an owner-only directory outside the
+repository. The lab setup already creates it that way.
 
 ```sh
-(
-  set -eu
-  umask 077
-  broker_work="$(mktemp -d /tmp/llm-broker-key.XXXXXX)"
-  trap 'rm -f "$broker_work/assertion.key"; rmdir "$broker_work"' EXIT
-  install -m 600 "${as_work:?Set the AS lab directory}/exchanger/assertion.key" \
-    "$broker_work/assertion.key"
-
-  uv run python broker.py "$broker_work" \
-    --keycloak-ca "${LAB_TLS_DIR:?Set the Keycloak TLS directory}/ca.pem" \
-    --as-ca "${as_tls:?Set the current AS TLS directory}/ca.pem" \
-    --gateway-ca "${gateway_work:?Set the gateway lab directory}/tls/ca.pem"
-)
+uv run python broker.py "${as_work:?Set the AS lab directory}/exchanger" \
+  --keycloak-ca "${LAB_TLS_DIR:?Set the Keycloak TLS directory}/ca.pem" \
+  --as-ca "$as_work/tls/ca.pem" \
+  --gateway-ca "${gateway_work:?Set the gateway lab directory}/tls/ca.pem"
 ```
 
 Sign in with the synthetic user in the system browser. Expect `MOCK_OK`,
