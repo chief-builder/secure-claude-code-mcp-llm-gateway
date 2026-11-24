@@ -38,6 +38,19 @@ HTTPS certificate, creates the authorization server's signing key and the exchan
 client's key, and writes a policy that maps the synthetic user to a gateway identity.
 Nothing is written inside the repository.
 
+In order, the block:
+
+1. creates one throwaway certificate authority and HTTPS certificate per service;
+2. creates the authorization server's signing key and the exchange client's key pair;
+3. writes the policy — the synthetic Keycloak user, whose ID is fixed in
+   `realm.json`, may exchange and appears to the gateway under a separate opaque
+   identity;
+4. creates a credential between gateway and mock, and one DPoP nonce key per service;
+5. saves the paths in `lab.env` so every terminal can load them.
+
+The block has no comment lines on purpose: macOS's default shell rejects them when
+pasted.
+
 ```sh
 (
   set -eu
@@ -48,17 +61,13 @@ Nothing is written inside the repository.
   as_work="$(mktemp -d "$lab_home/as.XXXXXX")"
   gateway_work="$(mktemp -d "$lab_home/gateway.XXXXXX")"
 
-  # One throwaway certificate authority and HTTPS certificate per service.
   sh components/oauth-lab/make-lab-tls.sh "$kc_work/tls"
   sh components/oauth-lab/make-lab-tls.sh "$as_work/tls"
   sh components/oauth-lab/make-lab-tls.sh "$gateway_work/tls"
 
   cd components/oauth-as
-  # The authorization server's signing key, and the exchange client's key pair.
   uv run python app.py init-keys "$as_work/keys"
   uv run python lab_exchange.py init-client "$as_work/exchanger" "$as_work/keys"
-  # Policy: the synthetic Keycloak user (its ID is fixed in realm.json) may exchange,
-  # and appears to the gateway under a separate opaque identity.
   uv run python - "$as_work/exchange-policy.json" \
     9ae7b8d8-cb6a-49f3-924c-2d73c8bd5b95 synthetic-gateway-subject-01 <<'PY'
 import json
@@ -74,7 +83,6 @@ Path(sys.argv[1]).write_text(json.dumps({
 }))
 PY
 
-  # A credential between gateway and mock, and one DPoP nonce key per service.
   umask 077
   mkdir -m 700 "$gateway_work/dpop"
   uv run python -c 'import secrets; print(secrets.token_urlsafe(32))' > "$gateway_work/mock.token"
@@ -83,7 +91,6 @@ PY
   uv run python -c 'import secrets,sys; sys.stdout.buffer.write(secrets.token_bytes(32))' \
     > "$gateway_work/dpop/nonce.key"
 
-  # Remember the paths so every terminal can load them.
   printf 'export repo=%q\nexport LAB_TLS_DIR=%q\nexport as_work=%q\nexport gateway_work=%q\n' \
     "$repo" "$kc_work/tls" "$as_work" "$gateway_work" > "$lab_home/lab.env"
   echo "Lab created. Paths saved in $lab_home/lab.env"
@@ -218,10 +225,15 @@ cd "$repo/components/oauth-lab"
 docker compose down
 ```
 
-To delete the lab's keys and certificates, remove the three directories named in
-`lab.env` and the file itself, or the whole `~/secure-claude-lab` folder if nothing
-else is in it. If you added the lab certificate authority to a browser profile,
-remove it there too.
+To delete the lab's keys and certificates, in a terminal with the paths loaded:
+
+```sh
+rm -rf "${LAB_TLS_DIR%/tls}" "$as_work" "$gateway_work" \
+  "${LAB_HOME:-$HOME/secure-claude-lab}/lab.env"
+```
+
+If you added the lab certificate authority to a browser profile, remove it there
+too.
 
 The certificates last seven days. After that, clean up and start again from step 2.
 
@@ -234,7 +246,7 @@ The certificates last seven days. After that, clean up and start again from step
 | Step 3 never prints `Keycloak is ready` | Keycloak did not start. Run `docker compose logs --tail 20` in `components/oauth-lab` to see why |
 | Keycloak's log says the realm file "Is a directory" | Docker cannot share the folder the repository is in. Move the clone under your home folder, or add its location to Docker's shared folders |
 | The authorization server exits with "pinned upstream trust unavailable" | Keycloak is not ready or not running. Repeat step 3 |
-| The broker prints only `session_failed` | Sign-in timed out or was cancelled, a service is down, or `claude` is not on your `PATH`. Check step 5, then run the broker again |
+| The broker ends with `session_failed` | Sign-in timed out or was cancelled, a service is down, or `claude` is not on your `PATH`. Check step 5, then run the broker again |
 | Everything worked last week and now fails on trust | The seven-day certificates expired. Clean up and start from step 2 |
 
 ## Where to go next

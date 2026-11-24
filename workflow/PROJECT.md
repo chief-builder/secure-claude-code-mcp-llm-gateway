@@ -116,4 +116,7 @@ joined by dashes and share one name; decision records are
 - Docker can only mount files from folders it shares. A clone in a temporary or scratch
   folder makes Keycloak fail with the realm file "Is a directory"; test clones go
   under the home folder.
+- Shell blocks in the docs must not contain `#` comment lines: the default macOS shell
+  rejects them when pasted. Prove a doc command by pasting it into an interactive
+  shell, not by running it as a script.
 - Lab certificates last 7 days. An expired certificate looks like a trust failure.

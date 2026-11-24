@@ -2,11 +2,11 @@
 
 A reference implementation that connects Claude Code on macOS to AWS Bedrock
 through an LLM [gateway](docs/glossary.md#gateway), using OAuth 2.0 [token exchange](docs/glossary.md#token-exchange) and
-[sender-constrained](docs/glossary.md#sender-constrained-token) ([DPoP](docs/glossary.md#dpop-demonstrating-proof-of-possession)) access tokens. A stolen access token cannot be replayed without the
+[sender-constrained](docs/glossary.md#sender-constrained-token) ([DPoP](docs/glossary.md#dpop-demonstrating-proof-of-possession)) [access tokens](docs/glossary.md#access-token). A stolen access token cannot be replayed without the
 client's private key, and AWS credentials never reach the developer laptop.
 
 > **This is a learning lab, not a product.** It runs with synthetic identities
-> on loopback addresses and disposable keys. It has been accepted gate by gate
+> on [loopback](docs/glossary.md#loopback) addresses and disposable keys. It has been accepted gate by gate
 > for that lab only. Read [Known limitations](#known-limitations) before
 > borrowing any part of it.
 
@@ -54,6 +54,14 @@ Claude Code only ever holds a random secret that is valid for one broker
 session on loopback. The broker holds the gateway token and signs a fresh
 proof for every request. The gateway is the only party with AWS credentials.
 
+The terms in the diagram are defined in the glossary:
+[credential broker](docs/glossary.md#credential-broker), [Keycloak](docs/glossary.md#keycloak),
+[authorization server](docs/glossary.md#authorization-server-as), [ID token](docs/glossary.md#id-token),
+[client assertion](docs/glossary.md#client-assertion-private_key_jwt), [issuer](docs/glossary.md#issuer),
+[JWKS](docs/glossary.md#jwks-json-web-key-set), [scope](docs/glossary.md#scope), [nonce](docs/glossary.md#nonce),
+[replay protection](docs/glossary.md#replay-protection), [Bearer token](docs/glossary.md#bearer-token) and
+[mock LLM](docs/glossary.md#mock-llm).
+
 ## Components
 
 | # | Component | Code and README | Design and evidence |
@@ -95,7 +103,7 @@ integration runs the offline tests on every push.
 | Suite | Runs offline | Needs a live dependency |
 |---|---|---|
 | `mock-llm`, `oauth-as`, `gateway` | All tests | — |
-| `oauth-lab` | Fixture tests | 11 tests need the running Keycloak realm (`LAB_TLS_DIR` set) |
+| `oauth-lab` | Fixture tests | 11 tests need the running Keycloak realm; they run when `LAB_TLS_DIR` is set, so unset it when Keycloak is down |
 | `broker` | Broker tests | 6 tests need the built signer and Secure Enclave hardware (`SECURE_SIGNER_TEST_BINARY` set) |
 
 ## Threat model

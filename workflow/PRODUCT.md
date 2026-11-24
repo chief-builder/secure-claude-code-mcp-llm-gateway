@@ -46,8 +46,7 @@ file says why it matters. Grown by the shape playbook; statuses kept true by hyg
 
 ### Documentation
 
-- Root README, component READMEs, design specs and verification records — done
-- Documentation improvement pass — planned
+Documentation — done: a one-page quickstart, task-based component READMEs, a glossary, explanation pages and an index that separates them from verification records.
 
 ## Not this
 

@@ -18,7 +18,7 @@ approval is not required: the change is documentation only and fully reversible.
 | 4 | Quickstart | Live run following it literally ends in `MOCK_OK` | **done** |
 | 5 | Five component READMEs with one heading set, including a new mock README | Headings identical; non-browser commands run as written | **done** |
 | 6 | Root README points to the quickstart, index and glossary | Link check passes | **done** |
-| 7 | Whole-task verification: link check, code diff empty, suites pass, verifier agent | All acceptance criteria met | in-progress |
+| 7 | Whole-task verification: link check, code diff empty, suites pass, verifier agent | All acceptance criteria met | **done** |
 
 **Risks.** Renamed README headings break anchors that frozen records link to; the
 link check in unit 7 covers anchors as well as files. The quickstart can only be

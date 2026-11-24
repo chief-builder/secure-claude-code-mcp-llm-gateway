@@ -29,6 +29,11 @@ application sends a hash of a random secret when sign-in starts and the secret i
 when it finishes, so an intercepted authorization code is useless on its own.
 [RFC 7636](https://www.rfc-editor.org/rfc/rfc7636.html)
 
+### Keycloak
+
+The open-source identity provider the lab runs in Docker. It signs the synthetic user
+in and issues the ID token. [Keycloak](https://www.keycloak.org/)
+
 ### Realm
 
 Keycloak's name for one isolated set of users, clients and keys. The lab
@@ -45,8 +50,9 @@ says what they may call.
 
 ### Issuer
 
-The URL that identifies whoever signed a token. A verifier compares the
-token's `iss` claim with the issuer it trusts before checking the signature.
+The URL that identifies whoever signed a token. A verifier accepts a
+token only if its `iss` claim names the issuer it trusts and the signature checks
+against that issuer's published keys.
 
 ### Access token
 
@@ -137,8 +143,8 @@ The first request without one is answered with a challenge and retried.
 ### Replay protection
 
 Refusing a credential that has been used before. The
-authorization server and the gateway each record used proofs, client assertions and
-subject tokens in a small SQLite database until they expire.
+authorization server records used client assertions, subject tokens and proofs, and
+the gateway records used proofs, each in a small SQLite database until they expire.
 
 ## The lab's own parts
 

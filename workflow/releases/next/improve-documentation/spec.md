@@ -43,27 +43,65 @@ link repairs in existing documents whose targets move.
 
 **Acceptance criteria.**
 
-- [ ] Following `docs/quickstart.md` literally, from a fresh clone and an empty
+- [x] Following `docs/quickstart.md` literally, from a fresh clone and an empty
       `~/secure-claude-lab`, ends with the broker exiting 0 and printing `MOCK_OK`.
       Proven by one live run in which every command is taken from the page as
       written.
-- [ ] Every command block in the five component READMEs that does not need a browser
+- [x] Every command block in the five component READMEs that does not need a browser
       has been run as written, and the test command in each reports the counts the
       README states.
-- [ ] All five component READMEs have the same section headings in the same order.
-- [ ] `components/mock-llm/README.md` exists and its run and test commands work.
-- [ ] Every relative link and every `#anchor` in every Markdown file outside `.venv`
+- [x] All five component READMEs have the same section headings in the same order.
+- [x] `components/mock-llm/README.md` exists and its run and test commands work.
+- [x] Every relative link and every `#anchor` in every Markdown file outside `.venv`
       resolves, checked by a command whose output is recorded.
-- [ ] Every term in the root README's standards table and architecture section has a
+- [x] Every term in the root README's standards table and architecture section has a
       glossary entry, and the glossary has no entry for a term the project does not
       use.
-- [ ] `docs/README.md` lists every file under `docs/` exactly once, under either
+- [x] `docs/README.md` lists every file under `docs/` exactly once, under either
       "how it works" or "how it was verified".
-- [ ] `git diff main -- components '*.py' '*.swift' pyproject.toml uv.lock` is empty
+- [x] `git diff main -- components '*.py' '*.swift' pyproject.toml uv.lock` is empty
       apart from README files, and all five offline suites still pass.
-- [ ] The verifier agent, given only the repository, reports no step in the
+- [x] The verifier agent, given only the repository, reports no step in the
       quickstart that it could not follow or that was ambiguous.
 
 **Open questions.** None. Decided at approval on 2026-11-24: the quickstart is a
 page only; the two Component 5 walkthroughs move to `docs/concepts/`; component and
 gate numbers leave the README headings.
+
+## Outcome — 2026-11-24
+
+All acceptance criteria met, with one stated deviation.
+
+**Proof run.** A fresh clone under the home folder; the owner did the browser
+sign-ins. Every quickstart command block was run as extracted from the page: lab
+created, `Keycloak is ready`, three services healthy, broker exit 0 with
+`MOCK_OK — Local inference working`, clean shutdown. Every command block in the
+five component READMEs was also run as written, including the Bearer and DPoP
+probes (`component_03_succeeded`, `component_04_succeeded`,
+`component_05_succeeded`), the sign-in client, the offline CLI check, and Claude
+Code pointed straight at the mock. Test counts matched the READMEs: 8; 34 with 11
+skipped (45 with Keycloak up); 55; 93; 13 with 6 skipped.
+
+**Deviation.** `~/secure-claude-lab` was not empty during the run; it held earlier,
+unrelated lab directories. Accepted: the quickstart creates uniquely named
+directories and cannot collide with them.
+
+**Link check.** A one-off script resolved every relative link and heading anchor in
+all Markdown files. Final output: `62 files, 245 relative links checked, 0 broken`.
+The script is not kept; a standing check in CI is on the backlog.
+
+**Verifier findings and what was done.**
+
+| Finding | Disposition |
+|---|---|
+| The lab-creation block had `#` comment lines, which the default macOS shell rejects when pasted, so step 2 failed for a real reader. The proof run missed it because it ran the block non-interactively | Fixed: comments moved into prose. Reproduced the failure, then pasted the corrected create, load and cleanup blocks into an interactive default shell successfully |
+| The sign-in README's test count was wrong when the lab paths were loaded but Keycloak was stopped, and the instruction to unset `LAB_TLS_DIR` had been dropped | Fixed: the README lists all three cases |
+| The link check's output and the non-empty lab folder were not recorded against the criteria | Recorded above |
+| Several glossary terms were not linked from the root README | Fixed: linked in prose, and the diagram's terms in one sentence below it |
+| Six small imprecisions: which service records what for replay protection; signature and issuer check order; what the child process receives; the cleanup instruction; a troubleshooting row; no glossary entry for Keycloak | All fixed |
+
+**Decided on the owner's behalf.** Glossary entries are headings so they can be
+linked. Component READMEs take their paths from the quickstart's `lab.env`. Three
+links and six anchors in frozen records were repaired because their targets moved,
+and one stale sentence in the signer README was corrected; nothing else in those
+records changed.

@@ -59,9 +59,10 @@ Detail: [authorization server walkthrough](authorization-server-walkthrough.md)
 ## 3. Launch Claude Code
 
 The broker checks the returned token itself, then starts a listener on a random
-loopback port and launches Claude Code as a child process. The child gets two
-values: the listener's URL as `ANTHROPIC_BASE_URL` and a random secret as
-`ANTHROPIC_AUTH_TOKEN`. It never receives the gateway token, the session key or any
+loopback port and launches Claude Code as a child process. The child gets a
+minimal environment: the listener's URL as `ANTHROPIC_BASE_URL`, a random secret as
+`ANTHROPIC_AUTH_TOKEN`, a temporary configuration directory, switches that turn off
+telemetry and updates, and a few basics such as `HOME` and `PATH`. It never receives the gateway token, the session key or any
 AWS credential.
 
 Code: [`broker/broker.py`](../../components/broker/broker.py)

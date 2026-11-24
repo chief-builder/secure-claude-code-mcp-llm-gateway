@@ -38,8 +38,13 @@ to `realm.json`.
 uv run python -m pytest -q
 ```
 
-Expect 34 passed and 11 skipped. The 11 are live protocol tests that run only when
-`LAB_TLS_DIR` is set and Keycloak is up; with both, expect 45 passed. Do not run
+The 11 live protocol tests run whenever `LAB_TLS_DIR` is set, so the result depends
+on your terminal:
+
+- lab paths loaded and Keycloak up: 45 passed;
+- `LAB_TLS_DIR` unset: 34 passed and 11 skipped;
+- lab paths loaded but Keycloak stopped: the 11 fail. Run `unset LAB_TLS_DIR` first.
+ Do not run
 the tests during an interactive sign-in, because both use callback port 8766.
 
 ## How it works
