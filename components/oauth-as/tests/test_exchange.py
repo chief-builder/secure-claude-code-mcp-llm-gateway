@@ -161,10 +161,12 @@ def test_subject_claims_and_dependencies(profile, monkeypatch):
     async def check():
         instance = app()
         async with running(instance) as client:
+            # Pin both times for the lifetime case: the form's own clock may tick past this one.
+            start = int(time.time())
             for claims in [
                 {"iss": ISSUER}, {"aud": "else"}, {"azp": "else"}, {"sub": "unknown"},
-                {"typ": "Bearer"}, {"nonce": ""}, {"exp": int(time.time()) + 301},
-                {"iat": int(time.time()) - 61}, {"iat": True},
+                {"typ": "Bearer"}, {"nonce": ""}, {"iat": start, "exp": start + 301},
+                {"iat": start - 61}, {"iat": True},
             ]:
                 rejected(await client.post("/token", data=form(source_claims=claims)))
             rejected(await client.post("/token", data=form("bad.token.parts")))
