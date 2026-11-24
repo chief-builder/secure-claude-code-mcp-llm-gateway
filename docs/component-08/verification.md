@@ -154,7 +154,7 @@ The account, Region, model/profile, IAM resources, host, TLS names, tunnels
 and spending limit were reviewed and deployment was explicitly approved
 before the 8B provisioning and paid checks recorded below.
 
-[Offline test instructions](../../components/gateway/README.md#component-8a-offline-converse-verification)
+[Offline test instructions](../../components/gateway/README.md#bedrock-backend)
 
 ## Real Claude Code offline compatibility check
 
@@ -200,7 +200,7 @@ Post-change verification
 - Broker — **13 passed, 6 opt-in hardware cases skipped**.
 - The actual CLI manual harness printed **Offline Claude Code adapter check passed**.
 
-[Manual invocation instructions](../../components/gateway/README.md#actual-claude-code-offline-text-check)
+[Manual invocation instructions](../../components/gateway/README.md#the-real-claude-code-cli-offline)
 
 ## Reviewer actual CLI result
 

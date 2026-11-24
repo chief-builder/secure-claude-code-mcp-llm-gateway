@@ -54,9 +54,9 @@ message, and the service that verifies it uses the corresponding public key.
 
 ## Issuance and invocation
 
-The [authorization-server code walkthrough](auth-server-walkthrough.md) follows
+The [authorization-server code walkthrough](../concepts/authorization-server-walkthrough.md) follows
 the nonce challenge, retry, and token issuance in the implementation. The
-[gateway code walkthrough](gateway-walkthrough.md) follows token and proof
+[gateway code walkthrough](../concepts/gateway-walkthrough.md) follows token and proof
 validation, replay recording, and forwarding to the mock.
 
 | Step | Contract |

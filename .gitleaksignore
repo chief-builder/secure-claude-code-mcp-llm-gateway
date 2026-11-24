@@ -1,0 +1,4 @@
+# Known false positives for the secret scan, one fingerprint per line.
+# An example curl command in the mock README used the placeholder credential
+# "local-mock-only". It is not a secret. The example now uses a variable.
+20d732bbdd1e025594b1cb885b1d60b49e2cce59:components/mock-llm/README.md:curl-auth-header:23

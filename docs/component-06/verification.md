@@ -85,5 +85,5 @@ The broker now adapts that single-turn text input into the mock's top-level
 `system` field and rejects multi-turn inline-system input. The real CLI smoke
 passed after that change. No Component 1 schema change was needed.
 
-Use the [broker walkthrough](../../components/broker/README.md#browser-to-claude-code-check)
+Use the [broker walkthrough](../../components/broker/README.md#run-it)
 to verify the complete system-browser path.
