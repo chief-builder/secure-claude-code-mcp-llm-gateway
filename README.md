@@ -164,11 +164,16 @@ the repository keeps the evidence. Components 1–8 were built with Codex
 (ChatGPT, powered by Codex & OWL, version 26.1027.51404) using
 GPI 6.1 Sol (light).
 
-- **The agent works to written rules.** [`AGENTS.md`](AGENTS.md) sets the
-  sequence Design → Review → Approve → Implement → Test → Accept and forbids
-  advancing without explicit human approval.
+- **The agent works to written rules.** Components 1–8 were built under a
+  Design → Review → Approve → Implement → Test → Accept sequence that forbade
+  advancing without explicit human approval. Since publication the project
+  uses a checked-in workflow ([`CLAUDE.md`](CLAUDE.md),
+  [`.claude/skills/swe-workflow`](.claude/skills/swe-workflow/SKILL.md)) with
+  the same gates, project rules in [`workflow/PROJECT.md`](workflow/PROJECT.md)
+  and planned work in [`workflow/ROADMAP.md`](workflow/ROADMAP.md).
 - **Design comes before code.** Each component has a design spec under
-  [`docs/`](docs) that was approved before implementation started.
+  [`docs/`](docs) that was approved before implementation started. New work
+  records its intent, spec and plan under [`workflow/releases`](workflow/releases).
 - **Claims need evidence.** The rules forbid calling something tested unless
   the tests were run. Each verification record separates what the assistant
   ran, what the human reviewer ran, and what is still pending.
