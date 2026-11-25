@@ -8,20 +8,49 @@ Every task line names the capability in `workflow/PRODUCT.md` it serves.
 ## Direction
 
 Make the existing lab easy to understand and reproduce for someone who was not part
-of building it, then extend the same identity and token model to MCP. It will not
-become a production gateway, and it will not handle real identities or data.
+of building it, close the gaps in its evidence, and then extend the same identity
+and token model in two directions: to MCP, and to a deployment where the identity
+services run on AWS instead of the developer's Mac. It will not become a production
+gateway, and it will not handle real identities or data.
 
-## Current release: next
+## Current release: 0.2.0
 
-Target: not set · Theme: a reference others can follow
+Target: not set · Theme: guardrails and evidence, and the next two steps thought through
 
 | Task | Capability | Status | Artifacts |
 |------|------------|--------|-----------|
-| improve-documentation | Documentation | shipped | [workflow/releases/next/improve-documentation/](releases/next/improve-documentation/) |
+| ci-docs-and-lint-checks | Documentation | backlog | — |
+| package-shared-code | Gateway and inference | backlog | — |
+| close-pending-checks | Sender-constrained access | backlog | — |
+| shape-mcp-gateway | MCP gateway | backlog | — |
+| shape-aws-hosted-identity | Hosted identity services | backlog | — |
+
+What each task is:
+
+- **ci-docs-and-lint-checks** — check Markdown links and anchors in CI, reject `#`
+  comment lines inside shell blocks, add a linter, and replace the source-line links
+  in the two code walkthroughs, which have drifted from the code.
+- **package-shared-code** — replace the `sys.path.insert` imports between
+  `oauth-as`, `gateway` and `broker` with a proper shared package, so a change in
+  one cannot silently break another. Behavior-preserving.
+- **close-pending-checks** — the checks left open at the original gates that need
+  the owner's hardware or accounts and no AWS deployment: reachability from a second
+  device, calling the gateway with a debugger-recovered token and software key,
+  observing the operating system refuse to sign during screen lock, and reconciling
+  the billed cost of the live Bedrock run with its budget alert.
+- **shape-mcp-gateway** — a design conversation, no code: who it is for, the
+  smallest useful version, what it reuses.
+- **shape-aws-hosted-identity** — a design conversation, no code: what it means to
+  run Keycloak and the authorization server on AWS instead of the Mac, including
+  where the signing keys live, real host names in place of pinned loopback
+  addresses, and what it costs.
 
 ## Next release (tentative)
 
-- Shape the MCP gateway capability (MCP gateway)
+- Build the first slice of the MCP gateway, as shaped (MCP gateway)
+- Build the AWS-hosted identity services, as shaped (Hosted identity services)
+- Verify the Bedrock adapter's matched stop sequence against live Bedrock, in the same AWS session (Gateway and inference)
+- Adopt the explicit client-assertion `typ` from draft-ietf-oauth-rfc7523bis (Sign-in and token issuance)
 
 ## Backlog
 
@@ -31,27 +60,19 @@ being lost in a conversation. Each line ends with the release it was filed in, s
 release planning can tell how long it has waited. Reviewed when planning each release;
 pruned without guilt.
 
-- Verify the Bedrock adapter's matched stop sequence against live Bedrock; today only offline tests cover it (Gateway and inference, filed: next)
-- Adopt the explicit client-assertion `typ` from draft-ietf-oauth-rfc7523bis once the exact value is confirmed in the draft text (Sign-in and token issuance, filed: next)
-- Check reachability of the lab listeners from a second device; pending since the original gates (Gateway and inference, filed: next)
-- Call the gateway with a debugger-recovered token and software key, to complete the Component 6 extraction evidence (Sender-constrained access, filed: next)
-- Observe the operating system refusing to sign during screen lock, independently of the helper's own lock check (Sender-constrained access, filed: next)
-- Reconcile the final billed cost of the live Bedrock run and confirm the budget-alert email (Gateway and inference, filed: next)
-- Token refresh so the broker can serve an interactive Claude Code session longer than five minutes (Local credential broker, filed: next)
-- Check Markdown links and anchors in CI, and reject `#` comment lines inside shell blocks, so a renamed heading or a pasted comment cannot silently break the docs (Documentation, filed: next)
-- Replace the source-line links in the two code walkthroughs, which have drifted from the code, with links that do not go stale (Documentation, filed: next)
-- Reword the `component_03_succeeded` message that `lab_exchange.py init-client` prints during setup, where it reads like a test result (Sign-in and token issuance, filed: next)
-- Sign the Secure Enclave helper and decide how it authorizes its caller (Sender-constrained access, filed: next)
+- Verify the Bedrock adapter's matched stop sequence against live Bedrock; today only offline tests cover it (Gateway and inference, filed: 0.1.0)
+- Adopt the explicit client-assertion `typ` from draft-ietf-oauth-rfc7523bis once the exact value is confirmed in the draft text (Sign-in and token issuance, filed: 0.1.0)
+- Token refresh so the broker can serve an interactive Claude Code session longer than five minutes (Local credential broker, filed: 0.1.0)
+- Reword the `component_03_succeeded` message that `lab_exchange.py init-client` prints during setup, where it reads like a test result (Sign-in and token issuance, filed: 0.1.0)
+- Sign the Secure Enclave helper and decide how it authorizes its caller (Sender-constrained access, filed: 0.1.0)
 
 ## Debt register
 
 Known structural debt, each with the pain it causes. Feeds the release-planning
 conversation alongside features.
 
-- Components import each other through `sys.path.insert`, so a change in `oauth-as` can break `gateway` and `broker` without any import error at edit time (filed: next)
-- `manual_claude_check.py` imports fixtures from test modules, tying a runnable script to test internals (filed: next)
-- Strict JSON parsing is duplicated in `oauth-lab/oidc.py` and `oauth-as/foundation.py`; a fix to one can miss the other (filed: next)
-- The gateway and token endpoints are hard-coded in `gateway.py`, `lab_invoke.py` and `SecureSigner.swift`; changing a port means three edits in two languages (filed: next)
-- The Bedrock request is validated twice, once in the gateway and once in the adapter transport (filed: next)
-- The mock's tests use a Starlette test client that now emits a deprecation warning (filed: next)
-- No lint or type check is configured (filed: next)
+- `manual_claude_check.py` imports fixtures from test modules, tying a runnable script to test internals (filed: 0.1.0)
+- Strict JSON parsing is duplicated in `oauth-lab/oidc.py` and `oauth-as/foundation.py`; a fix to one can miss the other (filed: 0.1.0)
+- The gateway and token endpoints are hard-coded in `gateway.py`, `lab_invoke.py` and `SecureSigner.swift`; changing a port means three edits in two languages (filed: 0.1.0)
+- The Bedrock request is validated twice, once in the gateway and once in the adapter transport (filed: 0.1.0)
+- The mock's tests use a Starlette test client that now emits a deprecation warning (filed: 0.1.0)

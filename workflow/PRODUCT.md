@@ -44,6 +44,10 @@ file says why it matters. Grown by the shape playbook; statuses kept true by hyg
 
 - Securing MCP server access through the same identity and token model — idea
 
+### Hosted identity services
+
+- Keycloak and the authorization server running on AWS instead of the developer's Mac — idea
+
 ### Documentation
 
 Documentation — done: a one-page quickstart, task-based component READMEs, a glossary, explanation pages and an index that separates them from verification records.
