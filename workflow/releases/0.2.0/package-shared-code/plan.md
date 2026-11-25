@@ -33,11 +33,11 @@ and is committed before the next.
 
 | # | Unit | Check | Status |
 |---|------|-------|--------|
-| 1 | Declare the four directories in `pyproject.toml`; relock | Suites pass with the `sys.path` lines still present | todo |
-| 2 | Delete the `sys.path` blocks in `gateway.py`, `lab_exchange.py` and `broker.py` | Suites pass; each module imports from an unrelated directory | todo |
-| 3 | Move shared fixtures to `conftest.py` in `oauth-as/tests` and `gateway/tests` | Same test counts; the two test-file lint exceptions removed | todo |
-| 4 | Move the three helpers `manual_claude_check.py` borrows from tests into a small module; delete its `sys.path` lines | The offline check passes; the last two lint exceptions removed | todo |
-| 5 | Update `workflow/PROJECT.md` and the debt register | Docs check passes | todo |
+| 1 | Declare the four directories in `pyproject.toml`; relock | Suites pass with the `sys.path` lines still present | **done** |
+| 2 | Delete the `sys.path` blocks in `gateway.py`, `lab_exchange.py` and `broker.py` | Suites pass; each module imports from an unrelated directory | **done** |
+| 3 | Move shared fixtures to `conftest.py` in `oauth-as/tests` and `gateway/tests` | Same test counts; the two test-file lint exceptions removed | **done** |
+| 4 | Move the three helpers `manual_claude_check.py` borrows from tests into a small module; delete its `sys.path` lines | The offline check passes; the last two lint exceptions removed | **done** |
+| 5 | Update `workflow/PROJECT.md` and the debt register | Docs check passes | **done** |
 | 6 | Prove equivalence: a fresh clone runs the quickstart end to end | Broker exits 0 with `MOCK_OK` | todo |
 | 7 | Verifier agent, then land | No behavior difference found | todo |
 

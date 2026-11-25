@@ -72,7 +72,6 @@ pruned without guilt.
 Known structural debt, each with the pain it causes. Feeds the release-planning
 conversation alongside features.
 
-- `manual_claude_check.py` imports fixtures from test modules, tying a runnable script to test internals (filed: 0.1.0)
 - Strict JSON parsing is duplicated in `oauth-lab/oidc.py` and `oauth-as/foundation.py`; a fix to one can miss the other (filed: 0.1.0)
 - The gateway and token endpoints are hard-coded in `gateway.py`, `lab_invoke.py` and `SecureSigner.swift`; changing a port means three edits in two languages (filed: 0.1.0)
 - The Bedrock request is validated twice, once in the gateway and once in the adapter transport (filed: 0.1.0)
