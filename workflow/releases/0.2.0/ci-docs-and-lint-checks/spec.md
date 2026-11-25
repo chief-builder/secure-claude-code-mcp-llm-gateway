@@ -1,7 +1,7 @@
 # Spec: ci-docs-and-lint-checks
 
 Consumes: [intent.md](intent.md)
-Status: draft
+Status: **approved** (2026-11-25)
 
 **Behavior.** Continuous integration gains two jobs that run on every push and pull
 request, next to the existing `test` and `secrets` jobs.
@@ -59,12 +59,6 @@ moving.
 - [ ] `git diff main -- components` shows changes to Markdown files only, and all
       five offline suites report the same counts as before.
 
-**Open questions.**
-
-1. Lint depth: small rule set with the existing findings listed as exceptions
-   (recommended), or also fix the test-fixture imports now, or broader rules and the
-   formatter?
-2. Docs checker: a small script kept in the repository (recommended), or a
-   third-party tool?
-3. Source-line links: replace with file links and ban them (recommended), or keep
-   them and correct the numbers?
+**Open questions.** None. Decided at approval on 2026-11-25: the small rule set
+with existing findings listed as exceptions; a small script kept in the repository;
+source-line links replaced and banned.

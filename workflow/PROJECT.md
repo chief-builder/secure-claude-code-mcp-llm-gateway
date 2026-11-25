@@ -24,8 +24,9 @@ line of reason, and the human says yes.
 ## Commands
 
 - Build: none (the components run from source)
-- Test: `uv sync`, then `for c in mock-llm oauth-lab oauth-as gateway broker; do (cd components/$c && uv run python -m pytest -q); done`
-- Lint / typecheck: none configured
+- Test: `uv sync`, then `for c in mock-llm oauth-lab oauth-as gateway broker; do (cd components/$c && uv run python -m pytest -q); done` and `(cd tools && uv run python -m pytest -q)`
+- Lint: `uv run ruff check` (a small rule set; no formatter, no type checker)
+- Docs check: `uv run python tools/check_docs.py` (links, heading anchors, shell blocks)
 - Run locally: follow the component READMEs in the order the root `README.md` lists
 - Version lives in: `pyproject.toml`, field `version`
 
@@ -116,9 +117,11 @@ joined by dashes and share one name; decision records are
 - Docker can only mount files from folders it shares. A clone in a temporary or scratch
   folder makes Keycloak fail with the realm file "Is a directory"; test clones go
   under the home folder.
-- Shell blocks in the docs must not contain `#` comment lines: the default macOS shell
-  rejects them when pasted. Prove a doc command by pasting it into an interactive
-  shell, not by running it as a script.
+- Prove a documented command by pasting it into an interactive shell, not by running
+  it as a script: the two behave differently. CI rejects `#` comment lines in shell
+  blocks, the one difference found so far, but cannot find the next one.
+- Do not link to source line numbers (`file.py#L12`); they go stale and CI rejects
+  them. Link to the file and name the function.
 - The secret scan flags a literal credential in an example `curl` authorization
   header, even a placeholder. Use a shell variable in examples. Known false positives
   go in `.gitleaksignore`.

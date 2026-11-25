@@ -99,7 +99,9 @@ part on its own. Keys, certificates and replay databases are created under
 ## Tests
 
 Run `uv run python -m pytest -q` in a component directory. Continuous
-integration runs the offline tests on every push.
+integration runs the offline tests on every push, along with a linter
+(`uv run ruff check`), a documentation check (`uv run python tools/check_docs.py`)
+and a secret scan.
 
 | Suite | Runs offline | Needs a live dependency |
 |---|---|---|

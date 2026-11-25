@@ -26,6 +26,28 @@ jobs:
             echo "== $c"
             (cd "components/$c" && uv run --locked python -m pytest -q)
           done
+          echo "== tools"
+          (cd tools && uv run --locked python -m pytest -q)
+
+  docs:
+    # Links, heading anchors, and shell blocks that can be pasted as written.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - run: python tools/check_docs.py
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          python-version: "3.14"
+      - run: uv sync --locked
+      - run: uv run --locked ruff check
 
   secrets:
     runs-on: ubuntu-latest
