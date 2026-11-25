@@ -2,7 +2,7 @@
 
 What was decided, what proved this release, and how to undo it.
 
-Status: waiting for ship approval
+Status: shipped 2026-11-25
 
 **Scope.** Approved on 2026-11-25: everything on `main` — Components 1 to 8, the
 publication fixes, the single `uv` environment, continuous integration, the adopted
@@ -11,7 +11,8 @@ never in this release and are on the roadmap's backlog.
 
 **Verification.**
 
-- Offline suites on the merge commit `28af6e2`, in continuous integration on Python
+- Offline suites in continuous integration, on `28af6e2` when this record was
+  written and again on the tagged commit `158e284`, on Python
   3.12 and 3.14: mock 8 passed; sign-in 34 passed and 11 skipped; authorization
   server 55 passed; gateway 93 passed; broker 13 passed and 6 skipped. The secret
   scan found nothing.
@@ -33,10 +34,13 @@ GitHub release. The signal would be a secret found in the tagged history, or a
 defect that breaks a property the README claims. For a defect, the normal course is
 a fix and a new release, not removing 0.1.0.
 
-**Ship.** Not yet shipped. Waiting for the owner to approve tagging.
+**Ship.** The owner approved the ship on 2026-11-25. Commit `158e284` on `main`
+was tagged `v0.1.0` after continuous integration passed on it, and the GitHub
+release was published the same day with the 0.1.0 changelog section. Nothing is
+deployed. Branch protection on `main`, requiring the three checks, was turned on
+just before the ship.
 
 ## Next action
 
-Owner approves the ship. Then: merge this record to `main`, tag that commit
-`v0.1.0`, publish the GitHub release with the 0.1.0 changelog section, and set
-Status to shipped with the commit and date.
+None. The release is shipped. Work continues with the 0.2.0 tasks in
+`workflow/ROADMAP.md`.

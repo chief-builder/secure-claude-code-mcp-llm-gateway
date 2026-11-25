@@ -15,7 +15,7 @@ line of reason, and the human says yes.
 - Team: solo
 - Phase: stabilizing — since 2026-11, the repository is public and others may rely on it
 - Merge path: pull request, self-reviewed
-- CI: required to merge
+- CI: required to merge — enforced since 2026-11-25 by branch protection on `main`
 - Deploy target: none
 - Released versions maintained: no
 - Autonomy: stop at gates
