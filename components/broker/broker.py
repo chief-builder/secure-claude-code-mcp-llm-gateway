@@ -13,7 +13,6 @@ import signal
 import socket
 import ssl
 import stat
-import sys
 import tempfile
 import time
 import uuid
@@ -31,7 +30,6 @@ from starlette.requests import ClientDisconnect
 from starlette.responses import Response
 
 REPO = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO / "components" / "gateway"))
 from gateway import (
     BODY_LIMIT, Failure, Invocation, Trust, access_credential, enforce_policy, error_response,
     read_messages, strict_json, validate_access_token,

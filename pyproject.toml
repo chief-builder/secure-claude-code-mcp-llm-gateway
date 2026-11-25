@@ -52,7 +52,6 @@ select = ["E4", "E7", "E9", "F"]
 #
 # Imports that follow a sys.path.insert line, which is how components currently
 # reach each other's modules.
-"components/broker/broker.py" = ["E402"]
 "components/gateway/manual_claude_check.py" = ["E402"]
 # pytest fixtures imported from another test module: the import looks unused and the
 # test's parameter looks like a redefinition.
