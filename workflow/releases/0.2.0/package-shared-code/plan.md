@@ -1,6 +1,6 @@
 # Plan: package-shared-code
 
-Status: draft — waiting for the owner's choice of approach
+Status: **approved** (2026-11-25) — approach A, proven at the end by a live run from a fresh clone
 
 **What a probe showed.** Declaring the four component directories in
 `pyproject.toml` through an editable install makes every cross-component import

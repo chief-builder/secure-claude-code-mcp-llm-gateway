@@ -20,9 +20,26 @@ dev = [
     "ruff==0.17.6",
 ]
 
-[tool.uv]
-# The components are run from their own directories, not installed as a package.
-package = false
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+# The components are plain modules run from their own directories. `uv sync` installs
+# this project in editable mode, which puts these directories on the import path, so
+# one component can import another without changing sys.path at run time.
+# mock-llm is not listed: it is a separate package called `app`, started with
+# uvicorn's --app-dir, and nothing imports it.
+dev-mode-dirs = [
+    "components/oauth-lab",
+    "components/oauth-as",
+    "components/gateway",
+    "components/broker",
+]
+
+[tool.hatch.build.targets.wheel]
+# Nothing is built for distribution; the editable install exists only for the paths.
+bypass-selection = true
 
 [tool.ruff.lint]
 # A deliberately small set: syntax errors, undefined names, unused imports and
