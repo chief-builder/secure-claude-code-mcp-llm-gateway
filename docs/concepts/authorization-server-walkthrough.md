@@ -118,7 +118,7 @@ The AS and gateway issue separate nonces for their own endpoints. The client
 reads each `DPoP-Nonce` response header and puts its value in the `nonce`
 claim of the next signed proof. The `jwk`, `alg`, and `typ` fields are JWT
 headers inside the proof carried by the HTTP `DPoP` header.
-[Exchange response handling](../../components/oauth-as/exchange.py) (`token_endpoint`) · [Gateway response handling](../../components/gateway/gateway.py) (`messages`)
+[Exchange response handling](../../components/oauth-as/exchange.py) (`token_endpoint`) · [Gateway response handling](../../components/gateway/gateway.py) (`error_response`)
 
 ## 2. Authenticate the exchange client
 

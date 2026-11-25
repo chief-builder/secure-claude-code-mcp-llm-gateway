@@ -13,13 +13,13 @@ no component code changes.
 
 | # | Unit | Check | Status |
 |---|------|-------|--------|
-| 1 | `tools/check_docs.py` and its tests | Tests pass; the script reports the 24 source-line links and nothing else | todo |
-| 2 | Replace the 24 source-line links in the two walkthroughs | The script exits 0; the grep in the spec finds nothing | todo |
-| 3 | Ruff as a development dependency, with rules and documented exceptions | `uv run ruff check` exits 0 | todo |
-| 4 | `docs` and `lint` jobs in CI; checker tests in the `test` job | All jobs pass on the task branch | todo |
-| 5 | Commands and pitfalls in `workflow/PROJECT.md` | Commands run as written | todo |
-| 6 | Prove each failure in real CI on a scratch branch, then delete it | Five failures seen, each naming file and line | todo |
-| 7 | Verifier agent, then land | Acceptance criteria met | todo |
+| 1 | `tools/check_docs.py` and its tests | Tests pass; the script reports the 24 source-line links and nothing else | **done** |
+| 2 | Replace the 24 source-line links in the two walkthroughs | The script exits 0; the grep in the spec finds nothing | **done** |
+| 3 | Ruff as a development dependency, with rules and documented exceptions | `uv run ruff check` exits 0 | **done** |
+| 4 | `docs` and `lint` jobs in CI; checker tests in the `test` job | All jobs pass on the task branch | **done** |
+| 5 | Commands and pitfalls in `workflow/PROJECT.md` | Commands run as written | **done** |
+| 6 | Prove each failure in real CI on a scratch branch, then delete it | Five failures seen, each naming file and line | **done** |
+| 7 | Verifier agent, then land | Acceptance criteria met | **done** |
 
 **Risks.** GitHub's heading-to-anchor rule is not formally specified; the checker
 implements the common cases, and a false alarm would show up as a failing `docs` job

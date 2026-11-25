@@ -45,20 +45,59 @@ moving.
 
 **Acceptance criteria.**
 
-- [ ] `uv run python tools/check_docs.py` exits 0 on the repository and prints how
+- [x] `uv run python tools/check_docs.py` exits 0 on the repository and prints how
       many files and links it checked.
-- [ ] The checker's own tests cover each of the four failure kinds and a passing
+- [x] The checker's own tests cover each of the four failure kinds and a passing
       case, and they run in the `test` job.
-- [ ] On a scratch branch, each of these makes the named job fail in real CI, and is
+- [x] On a scratch branch, each of these makes the named job fail in real CI, and is
       then reverted: a broken relative link (`docs`), a broken anchor (`docs`), a
       comment line in a shell block (`docs`), a source-line link (`docs`), an unused
       import in a component (`lint`).
-- [ ] `grep -rE '\.(py|swift)#L[0-9]+'` over the Markdown files finds nothing.
-- [ ] `uv run ruff check` exits 0, and every per-file exception in `pyproject.toml`
+- [x] No Markdown file contains a link to a source line. (Reworded at close: the
+      original said a grep for the pattern finds nothing, which this spec's own
+      prose examples make impossible.)
+- [x] `uv run ruff check` exits 0, and every per-file exception in `pyproject.toml`
       carries a comment saying why it exists and which task removes it.
-- [ ] `git diff main -- components` shows changes to Markdown files only, and all
+- [x] `git diff main -- components` shows changes to Markdown files only, and all
       five offline suites report the same counts as before.
 
 **Open questions.** None. Decided at approval on 2026-11-25: the small rule set
 with existing findings listed as exceptions; a small script kept in the repository;
 source-line links replaced and banned.
+
+## Outcome — 2026-11-25
+
+All acceptance criteria met.
+
+**What was built.** `tools/check_docs.py` with 25 tests; ruff 0.17.6 with rules
+`E4`, `E7`, `E9` and `F` and four documented per-file exceptions; `docs` and `lint`
+jobs in CI, with the checker's tests added to the `test` job; 24 source-line links
+replaced. No file under `components/` changed, and the five suites report the same
+counts as before (8; 34 with 11 skipped; 55; 93; 13 with 6 skipped).
+
+**Proof in real CI.** All five jobs passed on the task branch. On a throwaway
+branch, a link to a missing file, a link to a missing heading, a source-line link
+and a comment line in a shell block each failed `docs`, and an unused import in
+`gateway.py` failed `lint`, every message naming the file and line. The checker
+changed after that run; the later changes are covered by its unit tests and by the
+passing run on the final commit.
+
+**Verifier findings and what was done.**
+
+| Finding | Disposition |
+|---|---|
+| The grep criterion could not be met as worded | Reworded above; no source-line links remain |
+| Missed: links with a title or angle brackets; shell fences written with attributes or `~~~`; a code block never closed; file names git would quote; other spellings of a source-line fragment; running from a subdirectory | Fixed, each with a test |
+| False alarm: a link written as inline code | Fixed, with a test |
+| Two replaced links named a function that did only part of what the sentence says | Corrected to `Invocation.open_upstream` and `error_response` |
+| Not checked: reference-style and HTML links, links in indented code blocks, repo-root absolute links, targets with parentheses or a query, setext headings and named anchors, targets outside the repository | Accepted risk. None occurs in the repository's 66 Markdown files; the limits are stated at the top of the script |
+| A `#` line inside a here-document in a shell block is reported though it would paste correctly | Accepted risk, stated at the top of the script. The fix is to keep such lines out of shell blocks |
+| The lint exceptions are whole-file, so a new unused import in those four files goes unreported | Accepted until `package-shared-code` removes them. The narrower form would edit component code, which this task excludes |
+| `README.md` and `workflow/ROADMAP.md` changed though the Scope list names neither | Noted: one sentence in the README's Tests section, and this task's roadmap row |
+
+**Decided on the owner's behalf.** The setup-python action is used for the `docs`
+job so it needs no project installation. The checker always checks the whole
+repository, whatever directory it is run from.
+
+**Left for the owner.** Add `docs` and `lint` to the required status checks in the
+branch protection rule for `main`; new jobs are not required automatically.

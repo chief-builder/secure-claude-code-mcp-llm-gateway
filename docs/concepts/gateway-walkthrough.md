@@ -89,7 +89,7 @@ upstream headers with the separate mock credential and returns either
 JSON or an incremental SSE stream. The access token and proof stay at the
 gateway boundary. A mock timeout or client disconnect after commit leaves
 the proof spent. A subsequent invocation requires a new proof.
-[Mock forwarding](../../components/gateway/gateway.py) (`Invocation.forward`)
+[Mock forwarding](../../components/gateway/gateway.py) (`Invocation.open_upstream` and `Invocation.forward`)
 
 The [challenge and restart test](../../components/gateway/tests/test_gateway.py) (`test_dpop_gateway_challenge_concurrent_use_restart_and_diagnostics`)
 shows the nonce retry, a successful stream with a new proof, and rejection

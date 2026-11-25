@@ -60,3 +60,41 @@ def test_heading_anchor_follows_github(tmp_path):
     assert slug("Client assertion (`private_key_jwt`)") == "client-assertion-private_key_jwt"
     assert slug("The real Claude Code CLI, offline") == "the-real-claude-code-cli-offline"
     assert slug("A [linked](x.md) heading") == "a-linked-heading"
+
+
+@pytest.mark.parametrize("line", [
+    '[gone](missing.md "a title")', "[gone](<missing.md>)", "[gone]( missing.md )",
+])
+def test_reads_link_targets_with_titles_and_angle_brackets(tmp_path, line):
+    page = write(tmp_path, "page.md", f"# Page\n\n{line}\n")
+    problems, checked = check([page])
+    assert checked == 1
+    assert problems == [f"{page}:3: link to a missing file: missing.md"]
+
+
+def test_ignores_links_written_as_inline_code(tmp_path):
+    page = write(tmp_path, "page.md", "# Page\n\nWrite `[text](missing.md)` or `app.py#L12`.\n")
+    assert check([page]) == ([], 0)
+
+
+@pytest.mark.parametrize("opening", ['```sh title="x"', "```{.sh}", "~~~sh", "````bash"])
+def test_recognises_shell_fences_in_other_spellings(tmp_path, opening):
+    closing = "~~~" if opening.startswith("~") else "`" * (len(opening) - len(opening.lstrip("`")))
+    page = write(tmp_path, "page.md", f"# Page\n\n{opening}\n# explain\n{closing}\n\n[ok](#page)\n")
+    problems, checked = check([page])
+    assert checked == 1
+    assert len(problems) == 1 and problems[0].startswith(f"{page}:4: comment line in a shell block")
+
+
+def test_reports_a_code_block_that_is_never_closed(tmp_path):
+    page = write(tmp_path, "page.md", "# Page\n\n```text\nsome text\n\n[x](missing.md)\n")
+    problems, _ = check([page])
+    assert problems == [f"{page}:3: code block is never closed, so the rest of the file is unchecked"]
+
+
+@pytest.mark.parametrize("fragment", ["L12C3", "L1-5", "l12", "L3-L9"])
+def test_reports_every_spelling_of_a_source_line_link(tmp_path, fragment):
+    write(tmp_path, "app.py", "pass\n")
+    page = write(tmp_path, "page.md", f"# Page\n\n[stale](app.py#{fragment})\n")
+    problems, _ = check([page])
+    assert problems == [f"{page}:3: link to a source line, which goes stale: app.py#{fragment}"]
