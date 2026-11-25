@@ -42,7 +42,7 @@ sequenceDiagram
 When `--dpop-nonce-key` is supplied with `--exchange-policy`, `create_app()`
 loads the server's owner-only nonce key and creates a verifier for the
 configured token endpoint. The AS discovery document advertises ES256 for
-DPoP proofs. [AS startup and metadata](../../components/oauth-as/app.py#L75) · [Nonce key loading](../../components/oauth-as/dpop.py#L63)
+DPoP proofs. [AS startup and metadata](../../components/oauth-as/app.py) (`create_app`) · [Nonce key loading](../../components/oauth-as/dpop.py) (`nonce_key`)
 
 ### Who signs and who verifies
 
@@ -99,7 +99,7 @@ proof matches the thumbprint in the AS-signed access token.
 The AS nonce uses a separate symmetric secret. The AS creates and checks
 a message authentication code (HMAC) over the nonce data. The client
 receives the nonce and includes it in a proof signed with its DPoP key.
-[Nonce authentication](../../components/oauth-as/dpop.py#L92)
+[Nonce authentication](../../components/oauth-as/dpop.py) (`Verifier.nonce_mac`)
 
 ## HTTP headers at a glance
 
@@ -118,14 +118,14 @@ The AS and gateway issue separate nonces for their own endpoints. The client
 reads each `DPoP-Nonce` response header and puts its value in the `nonce`
 claim of the next signed proof. The `jwk`, `alg`, and `typ` fields are JWT
 headers inside the proof carried by the HTTP `DPoP` header.
-[Exchange response handling](../../components/oauth-as/exchange.py#L266) · [Gateway response handling](../../components/gateway/gateway.py#L362)
+[Exchange response handling](../../components/oauth-as/exchange.py) (`token_endpoint`) · [Gateway response handling](../../components/gateway/gateway.py) (`error_response`)
 
 ## 2. Authenticate the exchange client
 
 `token_endpoint()` parses the OAuth form and passes all `DPoP` header values
 to `Exchange.issue()`. Its first step, `authenticate()`, checks the registered
 client's RS256 assertion and records its one-time use. Each exchange attempt,
-including a nonce retry, needs a new client assertion. [Token endpoint](../../components/oauth-as/exchange.py#L266) · [Client authentication](../../components/oauth-as/exchange.py#L181)
+including a nonce retry, needs a new client assertion. [Token endpoint](../../components/oauth-as/exchange.py) (`token_endpoint`) · [Client authentication](../../components/oauth-as/exchange.py) (`Exchange.authenticate`)
 
 ## 3. Verify the proof and challenge for a nonce
 
@@ -133,7 +133,7 @@ including a nonce retry, needs a new client assertion. [Token endpoint](../../co
 It checks the proof type, ES256 signature, and embedded P-256 public key.
 The proof must cover the configured `POST /token` endpoint and include a
 fresh issuance time and proof ID. The verifier computes the public key's
-thumbprint, called `jkt`. [Proof validation](../../components/oauth-as/dpop.py#L120)
+thumbprint, called `jkt`. [Proof validation](../../components/oauth-as/dpop.py) (`Verifier.validate`)
 
 A missing, expired, or mismatched nonce on an otherwise valid proof results
 in `400 use_dpop_nonce` and a `DPoP-Nonce` response header. The AS authenticates
@@ -144,7 +144,7 @@ first attempt receives the challenge. An invalid client assertion or
 invalid proof signature fails earlier and receives its own error.
 
 On retry, the client sends the original Keycloak ID token, a new client
-assertion, and a new proof containing the nonce. [Nonce handling](../../components/oauth-as/dpop.py#L92) · [Challenge response](../../components/oauth-as/exchange.py#L278)
+assertion, and a new proof containing the nonce. [Nonce handling](../../components/oauth-as/dpop.py) (`Verifier.nonce_expiry`) · [Challenge response](../../components/oauth-as/exchange.py) (`token_endpoint`)
 
 ## 4. Record first use and issue the bound token
 
@@ -155,7 +155,7 @@ first use with that key and the ID token's
 first use. A duplicate reservation stops issuance. The AS rechecks freshness
 and signs the token within the transaction. If signing fails, both records
 roll back. The client assertion was consumed in its own earlier transaction.
-[Exchange validation](../../components/oauth-as/exchange.py#L206) · [Replay transaction](../../components/oauth-as/exchange.py#L122)
+[Exchange validation](../../components/oauth-as/exchange.py) (`Exchange.issue`) · [Replay transaction](../../components/oauth-as/exchange.py) (`ReplayStore.reserve`)
 
 The AS returns the token after commit with `token_type=DPoP`.
 `cnf` is the token's **confirmation** claim. Inside it, `jkt` means
@@ -169,8 +169,8 @@ public signing key. It also verifies the fresh proof using the public key
 inside that proof and computes the key's thumbprint. It compares that
 thumbprint to the AS-signed `cnf.jkt` to confirm the proof came from the
 key the AS bound to the token.
-[Token issuance and binding](../../components/oauth-as/exchange.py#L239)
+[Token issuance and binding](../../components/oauth-as/exchange.py) (`mint` inside `Exchange.issue`)
 
-The [challenge, binding, and replay test](../../components/oauth-as/tests/test_exchange.py#L428)
+The [challenge, binding, and replay test](../../components/oauth-as/tests/test_exchange.py) (`test_dpop_exchange_challenge_binding_and_replay`)
 shows the initial nonce challenge, rejection of a reused client assertion,
 successful issuance after retry, and rejection of a repeated proof.

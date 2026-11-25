@@ -19,7 +19,7 @@ Target: not set · Theme: guardrails and evidence, and the next two steps though
 
 | Task | Capability | Status | Artifacts |
 |------|------------|--------|-----------|
-| ci-docs-and-lint-checks | Documentation | backlog | — |
+| ci-docs-and-lint-checks | Documentation | shipped | [workflow/releases/0.2.0/ci-docs-and-lint-checks/](releases/0.2.0/ci-docs-and-lint-checks/) |
 | package-shared-code | Gateway and inference | backlog | — |
 | close-pending-checks | Sender-constrained access | backlog | — |
 | shape-mcp-gateway | MCP gateway | backlog | — |
@@ -64,6 +64,7 @@ pruned without guilt.
 - Adopt the explicit client-assertion `typ` from draft-ietf-oauth-rfc7523bis once the exact value is confirmed in the draft text (Sign-in and token issuance, filed: 0.1.0)
 - Token refresh so the broker can serve an interactive Claude Code session longer than five minutes (Local credential broker, filed: 0.1.0)
 - Reword the `component_03_succeeded` message that `lab_exchange.py init-client` prints during setup, where it reads like a test result (Sign-in and token issuance, filed: 0.1.0)
+- Add a type checker; the linter added in 0.2.0 covers names and imports only (Gateway and inference, filed: 0.2.0)
 - Sign the Secure Enclave helper and decide how it authorizes its caller (Sender-constrained access, filed: 0.1.0)
 
 ## Debt register
