@@ -19,7 +19,7 @@ Target: not set · Theme: guardrails and evidence, and the next two steps though
 
 | Task | Capability | Status | Artifacts |
 |------|------------|--------|-----------|
-| ci-docs-and-lint-checks | Documentation | backlog | — |
+| ci-docs-and-lint-checks | Documentation | in-progress | [workflow/releases/0.2.0/ci-docs-and-lint-checks/](releases/0.2.0/ci-docs-and-lint-checks/) |
 | package-shared-code | Gateway and inference | backlog | — |
 | close-pending-checks | Sender-constrained access | backlog | — |
 | shape-mcp-gateway | MCP gateway | backlog | — |
