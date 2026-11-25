@@ -94,6 +94,7 @@ part on its own. Keys, certificates and replay databases are created under
   fit together.
 - [Glossary](docs/glossary.md) — every term, in plain language.
 - [Documentation index](docs/README.md) — all explanations and verification records.
+- [Changelog](CHANGELOG.md) — what each release contains.
 
 ## Tests
 
