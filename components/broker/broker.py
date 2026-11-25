@@ -29,13 +29,13 @@ from fastapi import FastAPI, Request
 from starlette.requests import ClientDisconnect
 from starlette.responses import Response
 
-REPO = Path(__file__).resolve().parents[2]
 from gateway import (
     BODY_LIMIT, Failure, Invocation, Trust, access_credential, enforce_policy, error_response,
     read_messages, strict_json, validate_access_token,
 )
 from lab_invoke import GATEWAY, ExchangeLogin, LoginError, ProofClient, exchange_token, login, tls_client
 
+REPO = Path(__file__).resolve().parents[2]
 LOG = logging.getLogger("uvicorn.error")
 PROMPT = "Reply with the synthetic lab response."
 CHILD_ENV = ("HOME", "PATH", "USER", "LOGNAME", "SHELL", "TERM", "LANG", "LC_ALL", "TMPDIR")

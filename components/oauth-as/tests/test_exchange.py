@@ -15,7 +15,7 @@ from dpop import Verifier, encode, thumbprint
 from exchange import ACCESS, ASSERTION, CLIENT, GRANT, SCOPE, TARGET
 from foundation import EXCHANGE_CANDIDATE as CANDIDATE
 from foundation import ISSUER, UPSTREAM, public_jwk
-from test_foundation import issuer_transport, local, reply, running, upstream_key
+from test_foundation import issuer_transport, reply, running
 
 SUBJECT = "synthetic-employee-id"
 MAPPED = "opaque-synthetic-gateway-id"

@@ -45,15 +45,3 @@ bypass-selection = true
 # A deliberately small set: syntax errors, undefined names, unused imports and
 # variables, and import placement. No formatter and no import sorting.
 select = ["E4", "E7", "E9", "F"]
-
-[tool.ruff.lint.per-file-ignores]
-# Existing findings that are not defects. Each goes away in the package-shared-code
-# task (workflow/ROADMAP.md), which must delete its line here.
-#
-# Imports that follow a sys.path.insert line, which is how components currently
-# reach each other's modules.
-"components/gateway/manual_claude_check.py" = ["E402"]
-# pytest fixtures imported from another test module: the import looks unused and the
-# test's parameter looks like a redefinition.
-"components/gateway/tests/test_bedrock.py" = ["F401", "F811"]
-"components/oauth-as/tests/test_exchange.py" = ["F401", "F811"]
