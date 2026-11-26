@@ -561,9 +561,7 @@ def test_dpop_exchange_signing_failure_rolls_back_proof_and_subject(profile, loc
 
 def test_dpop_exchange_token_authorizes_gateway_invocation(profile, local, monkeypatch, tmp_path):
     import httpx
-    from pathlib import Path
 
-    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[2] / "gateway"))
     import gateway
     from lab_invoke import GATEWAY, ProofClient, REQUEST
 

@@ -73,6 +73,12 @@ and its cost plan are described in the
 repository calls AWS unless you start the gateway this way on a host with AWS
 credentials.
 
+The gateway imports modules from `../oauth-as`. On another host, clone the
+repository and run `uv sync --locked --no-dev`, which puts that directory on the
+import path. If you copy only the `gateway` and `oauth-as` directories into a plain
+virtual environment, as the original live run did, start the gateway with
+`PYTHONPATH=../oauth-as` or it fails with `No module named 'dpop'`.
+
 ### The real Claude Code CLI, offline
 
 With the lab services stopped, this runs the installed Claude Code CLI through the

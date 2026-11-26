@@ -20,7 +20,7 @@ Target: not set · Theme: guardrails and evidence, and the next two steps though
 | Task | Capability | Status | Artifacts |
 |------|------------|--------|-----------|
 | ci-docs-and-lint-checks | Documentation | shipped | [workflow/releases/0.2.0/ci-docs-and-lint-checks/](releases/0.2.0/ci-docs-and-lint-checks/) |
-| package-shared-code | Gateway and inference | in-progress | [workflow/releases/0.2.0/package-shared-code/](releases/0.2.0/package-shared-code/) |
+| package-shared-code | Gateway and inference | shipped | [workflow/releases/0.2.0/package-shared-code/](releases/0.2.0/package-shared-code/) |
 | close-pending-checks | Sender-constrained access | backlog | — |
 | shape-mcp-gateway | MCP gateway | backlog | — |
 | shape-aws-hosted-identity | Hosted identity services | backlog | — |
@@ -65,6 +65,7 @@ pruned without guilt.
 - Token refresh so the broker can serve an interactive Claude Code session longer than five minutes (Local credential broker, filed: 0.1.0)
 - Reword the `component_03_succeeded` message that `lab_exchange.py init-client` prints during setup, where it reads like a test result (Sign-in and token issuance, filed: 0.1.0)
 - Add a type checker; the linter added in 0.2.0 covers names and imports only (Gateway and inference, filed: 0.2.0)
+- Turn the components into real packages so a service can be deployed without the whole repository; decide the units in the AWS-hosting design first (Hosted identity services, filed: 0.2.0)
 - Sign the Secure Enclave helper and decide how it authorizes its caller (Sender-constrained access, filed: 0.1.0)
 
 ## Debt register

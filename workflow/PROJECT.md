@@ -109,7 +109,10 @@ joined by dashes and share one name; decision records are
 - Components import each other as plain modules. The directories are on the import
   path only because `uv sync` installs the project in editable mode (see
   `dev-mode-dirs` in `pyproject.toml`), so run everything with `uv run`. A module
-  name must be unique across `oauth-lab`, `oauth-as`, `gateway` and `broker`.
+  name must be unique across `oauth-lab`, `oauth-as`, `gateway` and `broker`, and
+  installed packages are found before these directories; `tools/tests` fails if a
+  dependency ever shadows one. A host without the editable install needs
+  `PYTHONPATH` set to the directories a component imports from.
 - Without `LAB_TLS_DIR`, 11 live Keycloak tests skip; without
   `SECURE_SIGNER_TEST_BINARY`, 6 hardware signer tests skip. A green run does not
   cover them.

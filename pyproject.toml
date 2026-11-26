@@ -21,8 +21,19 @@ dev = [
 ]
 
 [build-system]
-requires = ["hatchling"]
+# The build tool runs code at install time, so it is pinned like everything else.
+requires = ["hatchling==1.33.0"]
 build-backend = "hatchling.build"
+
+[tool.uv]
+# What hatchling itself pulls in at build time, pinned for the same reason.
+build-constraint-dependencies = [
+    "packaging==26.3",
+    "pathspec==1.1.1",
+    "pluggy==1.7.0",
+    "tomlkit==0.15.3",
+    "trove-classifiers==2026.9.21.13",
+]
 
 [tool.hatch.build]
 # The components are plain modules run from their own directories. `uv sync` installs

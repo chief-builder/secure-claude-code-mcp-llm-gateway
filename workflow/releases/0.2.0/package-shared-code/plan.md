@@ -38,8 +38,8 @@ and is committed before the next.
 | 3 | Move shared fixtures to `conftest.py` in `oauth-as/tests` and `gateway/tests` | Same test counts; the two test-file lint exceptions removed | **done** |
 | 4 | Move the three helpers `manual_claude_check.py` borrows from tests into a small module; delete its `sys.path` lines | The offline check passes; the last two lint exceptions removed | **done** |
 | 5 | Update `workflow/PROJECT.md` and the debt register | Docs check passes | **done** |
-| 6 | Prove equivalence: a fresh clone runs the quickstart end to end | Broker exits 0 with `MOCK_OK` | todo |
-| 7 | Verifier agent, then land | No behavior difference found | todo |
+| 6 | Prove equivalence: a fresh clone runs the quickstart end to end | Broker exits 0 with `MOCK_OK` | **done** |
+| 7 | Verifier agent, then land | No behavior difference found | **done** |
 
 **Proving behavior is unchanged.** Test counts identical before and after (8; 34
 with 11 skipped; 55; 93; 13 with 6 skipped). `git diff` on the component modules
@@ -50,3 +50,44 @@ help, runs the whole quickstart.
 running a component with a bare `python` outside the project environment stops
 working. That is already what every README says to do. A name clash with the mock's
 `app` package was checked and does not occur for the documented commands.
+
+## Outcome — 2026-11-25
+
+Behavior is unchanged for every documented command. One thing outside the
+documented commands did change, and one claim in the intent was wrong.
+
+**What was built.** `pyproject.toml` lists the four component directories through a
+hatchling editable install. Every `sys.path` change in `components/` is gone,
+including a redundant one in a test. Shared fixtures moved to `conftest.py` in the
+`oauth-as` and `gateway` tests; the synthetic responses the offline check borrowed
+from tests moved to `gateway/lab_fixtures.py`. All four lint exceptions are removed.
+
+**Proof.**
+
+- Collected test IDs and results are identical to `main` in all five suites (8; 34
+  with 11 skipped; 55; 93; 13 with 6 skipped), confirmed independently by the
+  verifier, which also found the moved code to be a line-for-line move.
+- All five CI jobs pass on a clean Linux checkout.
+- A fresh clone under the home folder ran the whole quickstart live, with the owner
+  signing in: the broker with the software key exited 0 with `MOCK_OK`; the DPoP
+  probe printed `component_05_succeeded`; the broker with the Secure Enclave signer
+  returned `MOCK_OK`. No tracebacks in the service logs.
+- The offline Claude Code check passed.
+
+**Verifier findings and what was done.**
+
+| Finding | Disposition |
+|---|---|
+| Copying only the `gateway` and `oauth-as` directories into a plain virtual environment, as the live Bedrock run did, worked on `main` and now fails with `No module named 'dpop'` | Real change in behavior. Documented in the gateway README with both remedies, each checked: `uv sync --locked --no-dev` in a clone, or `PYTHONPATH=../oauth-as`. The Component 8 records are history and were not edited |
+| The intent claimed this task makes deployment simpler. It does not: a host still needs both directories, and now the project files and `uv` as well | The intent was wrong on this point. Simpler deployment needs real packages (approach B), which is filed against the AWS-hosting design |
+| Hatchling was a new build-time dependency with no version pin, in a project that pins everything else | Fixed: hatchling and the four packages it pulls in are pinned, and the lockfile records them. Residual: build dependencies are pinned by version, not by hash |
+| Component directories now come after installed packages on the import path, so a dependency shipping a module named `gateway` or `exchange` would silently replace the lab's own | Fixed as a guard, not a prevention: `tools/tests/test_import_path.py` fails when any component module resolves elsewhere. Shown to fail with a same-named module placed ahead on the path |
+| A mistyped directory in `dev-mode-dirs` is accepted silently | Fixed: the same test file checks every listed directory exists and that module names are unique |
+| One `sys.path` change remained in a test, hidden from a text search | Removed |
+
+**Decided on the owner's behalf.** Pinning the build tool's own dependencies through
+`build-constraint-dependencies`. Adding the import-path guard tests to `tools/tests`,
+which already runs in CI.
+
+**Not covered.** The Bedrock backend and a real deployment to another host were not
+run; the two remedies in the gateway README were checked on this Mac only.
