@@ -52,9 +52,10 @@ holds only Claude Code, the broker and the signing helper. Decisions:
 [the signing key stays a file](decisions/0002-token-signing-key-stays-a-file.md).
 
 - One AWS host with all three services, created from a template and reached by tunnels, with no component code change — planned
+- Two synthetic users on two Macs using one deployment at the same time — planned
 - Addresses as configuration instead of pinned to `127.0.0.1`, in Python and in the Swift signer — planned
 - Identity services and the gateway on separate hosts — planned
-- A shared, always-on deployment with real host names — idea
+- An always-on deployment with real host names, for people without tunnel access — idea
 
 ### Documentation
 
