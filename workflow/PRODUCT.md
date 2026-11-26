@@ -22,6 +22,7 @@ file says why it matters. Grown by the shape playbook; statuses kept true by hyg
 - Authorization server metadata and signing keys — done
 - RFC 8693 token exchange with one-time use — done
 - RFC 7523bis explicit assertion type (`typ`) — idea
+- An exchange service that keeps the exchange client's key off laptops — idea
 
 ### Sender-constrained access
 

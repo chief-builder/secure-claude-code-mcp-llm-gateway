@@ -70,6 +70,7 @@ pruned without guilt.
 - Make the issuer, Keycloak, gateway and callback addresses configuration instead of constants, in Python and in the Swift signer's endpoint list; a change to accepted security modules, needed before the services can sit on separate hosts (Hosted identity services, filed: 0.2.0)
 - Split identity (Keycloak and the authorization server) and the gateway onto separate hosts, so the signing key and the Bedrock role no longer share a machine (Hosted identity services, filed: 0.2.0)
 - Turn the components into real packages so a service can be deployed without the whole repository; the units are the identity host and the gateway host (Hosted identity services, filed: 0.2.0)
+- A small exchange service next to the authorization server that holds the exchange client's key, so laptops stop holding a long-lived application credential; the broker would send it the ID token and DPoP proof and get the bound token back. Low priority by the owner's choice; needs shaping first, including how the service decides a laptop may ask (Sign-in and token issuance, filed: 0.2.0)
 - Sign the Secure Enclave helper and decide how it authorizes its caller (Sender-constrained access, filed: 0.1.0)
 
 ## Debt register
