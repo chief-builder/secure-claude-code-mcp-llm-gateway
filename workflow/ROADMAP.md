@@ -21,7 +21,7 @@ Target: not set · Theme: guardrails and evidence, and the next two steps though
 |------|------------|--------|-----------|
 | ci-docs-and-lint-checks | Documentation | shipped | [workflow/releases/0.2.0/ci-docs-and-lint-checks/](releases/0.2.0/ci-docs-and-lint-checks/) |
 | package-shared-code | Gateway and inference | shipped | [workflow/releases/0.2.0/package-shared-code/](releases/0.2.0/package-shared-code/) |
-| close-pending-checks | Sender-constrained access | backlog | — |
+| close-pending-checks | Sender-constrained access | in-progress | [workflow/releases/0.2.0/close-pending-checks/](releases/0.2.0/close-pending-checks/) |
 | shape-mcp-gateway | MCP gateway | shipped | [decisions/0003](decisions/0003-mcp-through-the-broker-with-its-own-tokens.md) |
 | shape-aws-hosted-identity | Hosted identity services | shipped | [decisions/0001](decisions/0001-one-aws-host-reached-by-tunnels-first.md), [decisions/0002](decisions/0002-token-signing-key-stays-a-file.md) |
 
