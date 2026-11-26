@@ -23,7 +23,7 @@ Target: not set · Theme: guardrails and evidence, and the next two steps though
 | package-shared-code | Gateway and inference | shipped | [workflow/releases/0.2.0/package-shared-code/](releases/0.2.0/package-shared-code/) |
 | close-pending-checks | Sender-constrained access | backlog | — |
 | shape-mcp-gateway | MCP gateway | backlog | — |
-| shape-aws-hosted-identity | Hosted identity services | backlog | — |
+| shape-aws-hosted-identity | Hosted identity services | shipped | [decisions/0001](decisions/0001-one-aws-host-reached-by-tunnels-first.md), [decisions/0002](decisions/0002-token-signing-key-stays-a-file.md) |
 
 What each task is:
 
@@ -48,7 +48,7 @@ What each task is:
 ## Next release (tentative)
 
 - Build the first slice of the MCP gateway, as shaped (MCP gateway)
-- Build the AWS-hosted identity services, as shaped (Hosted identity services)
+- One AWS host running Keycloak, the authorization server and the gateway, created from a template and reached by tunnels (Hosted identity services)
 - Verify the Bedrock adapter's matched stop sequence against live Bedrock, in the same AWS session (Gateway and inference)
 - Adopt the explicit client-assertion `typ` from draft-ietf-oauth-rfc7523bis (Sign-in and token issuance)
 
@@ -65,7 +65,12 @@ pruned without guilt.
 - Token refresh so the broker can serve an interactive Claude Code session longer than five minutes (Local credential broker, filed: 0.1.0)
 - Reword the `component_03_succeeded` message that `lab_exchange.py init-client` prints during setup, where it reads like a test result (Sign-in and token issuance, filed: 0.1.0)
 - Add a type checker; the linter added in 0.2.0 covers names and imports only (Gateway and inference, filed: 0.2.0)
-- Turn the components into real packages so a service can be deployed without the whole repository; decide the units in the AWS-hosting design first (Hosted identity services, filed: 0.2.0)
+- One AWS host running Keycloak, the authorization server and the gateway on its loopback, created from a template, up only for a session, removed with one command, reached from the Mac by tunnels to the same ports; no component code change. To settle in its spec: template tool, tunnel method (SSH or Systems Manager), instance size, separating the services by operating-system user, keeping the instance role away from the identity processes, mock or Bedrock backend, and the cost ceiling (Hosted identity services, filed: 0.2.0)
+- Two synthetic users on two Macs against one deployment: a second user in the realm and the exchange policy, a client key per Mac registered with the authorization server (the server accepts several; the setup command creates one), tunnel access for the second person, and the lab certificate authorities on the second Mac. Prove it with both signed in at once and each token carrying its own subject (Hosted identity services, filed: 0.2.0)
+- Make the issuer, Keycloak, gateway and callback addresses configuration instead of constants, in Python and in the Swift signer's endpoint list; a change to accepted security modules, needed before the services can sit on separate hosts (Hosted identity services, filed: 0.2.0)
+- Split identity (Keycloak and the authorization server) and the gateway onto separate hosts, so the signing key and the Bedrock role no longer share a machine (Hosted identity services, filed: 0.2.0)
+- Turn the components into real packages so a service can be deployed without the whole repository; the units are the identity host and the gateway host (Hosted identity services, filed: 0.2.0)
+- A small exchange service next to the authorization server that holds the exchange client's key, so laptops stop holding a long-lived application credential; the broker would send it the ID token and DPoP proof and get the bound token back. Low priority by the owner's choice; needs shaping first, including how the service decides a laptop may ask (Sign-in and token issuance, filed: 0.2.0)
 - Sign the Secure Enclave helper and decide how it authorizes its caller (Sender-constrained access, filed: 0.1.0)
 
 ## Debt register
@@ -74,6 +79,5 @@ Known structural debt, each with the pain it causes. Feeds the release-planning
 conversation alongside features.
 
 - Strict JSON parsing is duplicated in `oauth-lab/oidc.py` and `oauth-as/foundation.py`; a fix to one can miss the other (filed: 0.1.0)
-- The gateway and token endpoints are hard-coded in `gateway.py`, `lab_invoke.py` and `SecureSigner.swift`; changing a port means three edits in two languages (filed: 0.1.0)
 - The Bedrock request is validated twice, once in the gateway and once in the adapter transport (filed: 0.1.0)
 - The mock's tests use a Starlette test client that now emits a deprecation warning (filed: 0.1.0)

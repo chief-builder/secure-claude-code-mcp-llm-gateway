@@ -22,6 +22,7 @@ file says why it matters. Grown by the shape playbook; statuses kept true by hyg
 - Authorization server metadata and signing keys — done
 - RFC 8693 token exchange with one-time use — done
 - RFC 7523bis explicit assertion type (`typ`) — idea
+- An exchange service that keeps the exchange client's key off laptops — idea
 
 ### Sender-constrained access
 
@@ -46,7 +47,16 @@ file says why it matters. Grown by the shape playbook; statuses kept true by hyg
 
 ### Hosted identity services
 
-- Keycloak and the authorization server running on AWS instead of the developer's Mac — idea
+Keycloak, the authorization server and the gateway running on AWS, so the laptop
+holds only Claude Code, the broker and the signing helper. Decisions:
+[one host first, then split](decisions/0001-one-aws-host-reached-by-tunnels-first.md);
+[the signing key stays a file](decisions/0002-token-signing-key-stays-a-file.md).
+
+- One AWS host with all three services, created from a template and reached by tunnels, with no component code change — planned
+- Two synthetic users on two Macs using one deployment at the same time — planned
+- Addresses as configuration instead of pinned to `127.0.0.1`, in Python and in the Swift signer — planned
+- Identity services and the gateway on separate hosts — planned
+- An always-on deployment with real host names, for people without tunnel access — idea
 
 ### Documentation
 
