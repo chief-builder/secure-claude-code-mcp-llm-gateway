@@ -61,7 +61,7 @@ release planning can tell how long it has waited. Reviewed when planning each re
 pruned without guilt.
 
 - Verify the Bedrock adapter's matched stop sequence against live Bedrock; today only offline tests cover it (Gateway and inference, filed: 0.1.0)
-- Adopt the explicit client-assertion `typ` from draft-ietf-oauth-rfc7523bis once the exact value is confirmed in the draft text (Sign-in and token issuance, filed: 0.1.0)
+- Adopt the explicit client-assertion `typ` from the update to RFC 7523. An MCP extension page cites that update as RFC 10070, which suggests it is now published; confirm against the RFC text and take the exact value from it (Sign-in and token issuance, filed: 0.1.0)
 - Token refresh so the broker can serve an interactive Claude Code session longer than five minutes (Local credential broker, filed: 0.1.0)
 - Reword the `component_03_succeeded` message that `lab_exchange.py init-client` prints during setup, where it reads like a test result (Sign-in and token issuance, filed: 0.1.0)
 - Add a type checker; the linter added in 0.2.0 covers names and imports only (Gateway and inference, filed: 0.2.0)
@@ -71,12 +71,14 @@ pruned without guilt.
 - Split identity (Keycloak and the authorization server) and the gateway onto separate hosts, so the signing key and the Bedrock role no longer share a machine (Hosted identity services, filed: 0.2.0)
 - Turn the components into real packages so a service can be deployed without the whole repository; the units are the identity host and the gateway host (Hosted identity services, filed: 0.2.0)
 - A small exchange service next to the authorization server that holds the exchange client's key, so laptops stop holding a long-lived application credential; the broker would send it the ID token and DPoP proof and get the bound token back. Low priority by the owner's choice; needs shaping first, including how the service decides a laptop may ask (Sign-in and token issuance, filed: 0.2.0)
-- Issue tokens for MCP: a second audience and scope in the authorization server's token exchange, so model tokens and MCP tokens cannot stand in for each other; a change to an accepted security module (MCP gateway, filed: 0.2.0)
-- A mock MCP server with at least two harmless tools, so a rule that allows one and refuses the other can be shown (MCP gateway, filed: 0.2.0)
-- The MCP gateway: verify the MCP token, the DPoP proof, the nonce and replay; apply per-tool rules by leaving disallowed tools out of the list and refusing calls to them; forward to the mock with the gateway's own credential; audit the user and tool name, never the arguments. Proven by a test client (MCP gateway, filed: 0.2.0)
-- The broker as Claude Code's local MCP endpoint: a second loopback listener protected by the session secret, tools and MCP enabled in the launched CLI, and Claude Code shown listing only the tools the user may call (MCP gateway, filed: 0.2.0)
+- Issue tokens for MCP: a second audience and scope in the authorization server's token exchange, so model tokens and MCP tokens cannot stand in for each other. The audience is the MCP gateway's endpoint address, which the broker names in its request, as the MCP specification expects. A change to an accepted security module (MCP gateway, filed: 0.2.0)
+- A mock MCP server for revision 2026-07-28 of the specification, with at least two harmless tools so a rule that allows one and refuses the other can be shown. It answers `server/discover`, `tools/list` and `tools/call`, checks that the request headers match the body, and checks `Origin` (MCP gateway, filed: 0.2.0)
+- The MCP gateway: verify the MCP token, the DPoP proof, the nonce and replay; check the MCP request headers against the body; answer `server/discover` itself and allow only `tools/list` and `tools/call`; apply per-tool rules by leaving disallowed tools out of the list, marking the list private so it cannot be cached across users, and refusing calls to them as unknown tools; forward to the mock with the gateway's own credential and never the user's token; publish the metadata the specification requires; audit the user and tool name, never the arguments. Proven by a test client (MCP gateway, filed: 0.2.0)
+- The broker as Claude Code's local MCP endpoint: first observe which MCP revision the installed Claude Code speaks, because a client built for the older handshake-based revisions cannot talk to a server that supports only the current one; then a second loopback listener protected by the session secret, tools and MCP enabled in the launched CLI, and Claude Code shown listing only the tools the user may call (MCP gateway, filed: 0.2.0)
 - A scripted mock model that asks for one MCP tool once, so Claude Code really calls it through the broker and gateway and prints the result (MCP gateway, filed: 0.2.0)
 - Tool use in the Bedrock adapter, then a real model choosing to call an MCP tool; needs paid AWS time (MCP gateway, filed: 0.2.0)
+- Compare the token flow with MCP's Enterprise-Managed Authorization extension, which has the same aim through a different exchange, and decide whether to offer it alongside; Keycloak's support is experimental (MCP gateway, filed: 0.2.0)
+- Let an upstream MCP server ask the user for input mid-call (the specification's multi-round-trip requests) and long-lived change notifications; the first gateway version refuses both (MCP gateway, filed: 0.2.0)
 - Sign the Secure Enclave helper and decide how it authorizes its caller (Sender-constrained access, filed: 0.1.0)
 
 ## Debt register

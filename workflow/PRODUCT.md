@@ -54,6 +54,8 @@ Decision: [MCP through the broker, with its own tokens and per-tool rules](decis
 - Broker as the local MCP endpoint for Claude Code — planned
 - Claude Code really calling a tool, driven by a scripted mock model — planned
 - A real model on Bedrock choosing to call a tool — planned
+- Upstream servers asking the user for input mid-call, and change notifications — idea
+- MCP's Enterprise-Managed Authorization extension as an alternative token flow — idea
 
 ### Hosted identity services
 
