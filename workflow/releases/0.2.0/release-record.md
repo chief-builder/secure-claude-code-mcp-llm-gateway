@@ -2,7 +2,7 @@
 
 What was decided, what proved this release, and how to undo it.
 
-Status: waiting for ship approval
+Status: shipped 2026-11-26
 
 **Scope.** Approved on 2026-11-26. Shipped: `ci-docs-and-lint-checks`,
 `package-shared-code`, `shape-aws-hosted-identity`, `shape-mcp-gateway`, and the
@@ -44,10 +44,10 @@ GitHub release. A user who hits a problem can return to `v0.1.0` with
 command that fails after the update, or a secret found in the tagged history. For a
 defect, the normal course is a fix and a new release.
 
-**Ship.** Not yet shipped. Waiting for the owner to approve tagging.
+**Ship.** The owner approved the ship on 2026-11-26. Commit `e138a7f` on `main` was
+tagged `v0.2.0` after continuous integration passed on it, and the GitHub release
+was published the same day with the 0.2.0 changelog section. Nothing is deployed.
 
 ## Next action
 
-Owner approves the ship. Then: merge this record to `main`, tag that commit
-`v0.2.0` once continuous integration passes on it, publish the GitHub release with
-the 0.2.0 changelog section, set Status to shipped, run hygiene, and plan 0.3.0.
+None. The release is shipped. Next is planning 0.3.0.
