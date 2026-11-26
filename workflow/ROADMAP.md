@@ -21,7 +21,7 @@ Target: not set · Theme: guardrails and evidence, and the next two steps though
 |------|------------|--------|-----------|
 | ci-docs-and-lint-checks | Documentation | shipped | [workflow/releases/0.2.0/ci-docs-and-lint-checks/](releases/0.2.0/ci-docs-and-lint-checks/) |
 | package-shared-code | Gateway and inference | shipped | [workflow/releases/0.2.0/package-shared-code/](releases/0.2.0/package-shared-code/) |
-| close-pending-checks | Sender-constrained access | in-progress | [workflow/releases/0.2.0/close-pending-checks/](releases/0.2.0/close-pending-checks/) |
+| close-pending-checks | Sender-constrained access | shipped (billing check); three checks slipped to the next release | [workflow/releases/0.2.0/close-pending-checks/](releases/0.2.0/close-pending-checks/) |
 | shape-mcp-gateway | MCP gateway | shipped | [decisions/0003](decisions/0003-mcp-through-the-broker-with-its-own-tokens.md) |
 | shape-aws-hosted-identity | Hosted identity services | shipped | [decisions/0001](decisions/0001-one-aws-host-reached-by-tunnels-first.md), [decisions/0002](decisions/0002-token-signing-key-stays-a-file.md) |
 
@@ -48,6 +48,7 @@ What each task is:
 
 ## Next release (tentative)
 
+- The three checks slipped from 0.2.0 because the owner will do them later: reachability from a second device, a gateway call with a debugger-recovered token and software key, and the operating system refusing to sign during screen lock (Sender-constrained access)
 - The MCP gateway's first stage, in the local lab: MCP tokens, a mock MCP server, the gateway with per-tool rules, and the broker as Claude Code's MCP endpoint (MCP gateway)
 - One AWS host running Keycloak, the authorization server and the gateway, created from a template and reached by tunnels (Hosted identity services)
 - Verify the Bedrock adapter's matched stop sequence against live Bedrock, in the same AWS session (Gateway and inference)
