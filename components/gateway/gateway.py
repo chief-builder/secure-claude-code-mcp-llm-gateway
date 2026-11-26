@@ -8,7 +8,6 @@ import os
 import re
 import sqlite3
 import ssl
-import sys
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -22,8 +21,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.requests import ClientDisconnect
 from starlette.responses import JSONResponse, Response, StreamingResponse
 
-# Reuse the lab's strict JWT and JWKS parsing across the issuer and verifier.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "oauth-as"))
+# The issuer and the verifier share the lab's strict JWT and JWKS parsing.
 from dpop import InvalidProof, NonceRequired, Verifier, nonce_key, valid_thumbprint
 from exchange import CLIENT, SCOPE, TARGET, ReplayStore, digest, signing_keys, token_parts, verify
 from foundation import ISSUER, MAX_BYTES, FoundationError, checked_rsa_keys, read_object, unique_fields

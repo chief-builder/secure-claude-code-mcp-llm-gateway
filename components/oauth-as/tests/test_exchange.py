@@ -15,7 +15,7 @@ from dpop import Verifier, encode, thumbprint
 from exchange import ACCESS, ASSERTION, CLIENT, GRANT, SCOPE, TARGET
 from foundation import EXCHANGE_CANDIDATE as CANDIDATE
 from foundation import ISSUER, UPSTREAM, public_jwk
-from test_foundation import issuer_transport, local, reply, running, upstream_key
+from test_foundation import issuer_transport, reply, running
 
 SUBJECT = "synthetic-employee-id"
 MAPPED = "opaque-synthetic-gateway-id"
@@ -561,9 +561,7 @@ def test_dpop_exchange_signing_failure_rolls_back_proof_and_subject(profile, loc
 
 def test_dpop_exchange_token_authorizes_gateway_invocation(profile, local, monkeypatch, tmp_path):
     import httpx
-    from pathlib import Path
 
-    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[2] / "gateway"))
     import gateway
     from lab_invoke import GATEWAY, ProofClient, REQUEST
 

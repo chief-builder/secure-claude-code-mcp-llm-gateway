@@ -1,4 +1,4 @@
-"""Offline CLI compatibility check using the existing synthetic test fixtures."""
+"""Offline CLI compatibility check using the shared synthetic fixtures."""
 
 import asyncio
 import logging
@@ -14,14 +14,10 @@ import httpx
 import jwt
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-HERE = Path(__file__).resolve().parent
-sys.path.insert(0, str(HERE.parent / "broker"))
-sys.path.insert(0, str(HERE / "tests"))
 import broker
 import gateway
 from foundation import public_jwk
-from test_bedrock import Client, routes
-from test_gateway import reply
+from lab_fixtures import Client, reply, routes
 
 LOG = logging.getLogger("uvicorn.error")
 

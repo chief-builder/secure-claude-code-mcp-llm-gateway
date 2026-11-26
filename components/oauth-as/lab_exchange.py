@@ -16,7 +16,6 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from exchange import ACCESS, ASSERTION, CLIENT, GRANT, SCOPE, TARGET
 from foundation import CANDIDATE, EXCHANGE_CLIENT_JWKS, ISSUER, public_jwk
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "oauth-lab"))
 from login import login
 from oidc import Keycloak, LoginError, tls_client
 

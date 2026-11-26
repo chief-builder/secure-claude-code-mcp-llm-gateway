@@ -9,27 +9,13 @@ import jwt
 import pytest
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.asymmetric import padding
 
 from app import create_app
 from foundation import (
     DISCOVERY, ISSUER, POLICY, UPSTREAM, UPSTREAM_JWKS, FoundationError, load_local,
-    provision, public_jwk,
+    public_jwk,
 )
-
-
-@pytest.fixture
-def local(tmp_path):
-    keys = tmp_path / "keys"
-    provision(keys)
-    policy = tmp_path / "policy.json"
-    policy.write_text(json.dumps(POLICY))
-    return keys, policy
-
-
-@pytest.fixture(scope="module")
-def upstream_key():
-    return rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
 
 def reply(document, status=200, **headers):
