@@ -22,7 +22,7 @@ Target: not set · Theme: guardrails and evidence, and the next two steps though
 | ci-docs-and-lint-checks | Documentation | shipped | [workflow/releases/0.2.0/ci-docs-and-lint-checks/](releases/0.2.0/ci-docs-and-lint-checks/) |
 | package-shared-code | Gateway and inference | shipped | [workflow/releases/0.2.0/package-shared-code/](releases/0.2.0/package-shared-code/) |
 | close-pending-checks | Sender-constrained access | backlog | — |
-| shape-mcp-gateway | MCP gateway | backlog | — |
+| shape-mcp-gateway | MCP gateway | shipped | [decisions/0003](decisions/0003-mcp-through-the-broker-with-its-own-tokens.md) |
 | shape-aws-hosted-identity | Hosted identity services | shipped | [decisions/0001](decisions/0001-one-aws-host-reached-by-tunnels-first.md), [decisions/0002](decisions/0002-token-signing-key-stays-a-file.md) |
 
 What each task is:
@@ -47,7 +47,7 @@ What each task is:
 
 ## Next release (tentative)
 
-- Build the first slice of the MCP gateway, as shaped (MCP gateway)
+- The MCP gateway's first stage, in the local lab: MCP tokens, a mock MCP server, the gateway with per-tool rules, and the broker as Claude Code's MCP endpoint (MCP gateway)
 - One AWS host running Keycloak, the authorization server and the gateway, created from a template and reached by tunnels (Hosted identity services)
 - Verify the Bedrock adapter's matched stop sequence against live Bedrock, in the same AWS session (Gateway and inference)
 - Adopt the explicit client-assertion `typ` from draft-ietf-oauth-rfc7523bis (Sign-in and token issuance)
@@ -71,6 +71,12 @@ pruned without guilt.
 - Split identity (Keycloak and the authorization server) and the gateway onto separate hosts, so the signing key and the Bedrock role no longer share a machine (Hosted identity services, filed: 0.2.0)
 - Turn the components into real packages so a service can be deployed without the whole repository; the units are the identity host and the gateway host (Hosted identity services, filed: 0.2.0)
 - A small exchange service next to the authorization server that holds the exchange client's key, so laptops stop holding a long-lived application credential; the broker would send it the ID token and DPoP proof and get the bound token back. Low priority by the owner's choice; needs shaping first, including how the service decides a laptop may ask (Sign-in and token issuance, filed: 0.2.0)
+- Issue tokens for MCP: a second audience and scope in the authorization server's token exchange, so model tokens and MCP tokens cannot stand in for each other; a change to an accepted security module (MCP gateway, filed: 0.2.0)
+- A mock MCP server with at least two harmless tools, so a rule that allows one and refuses the other can be shown (MCP gateway, filed: 0.2.0)
+- The MCP gateway: verify the MCP token, the DPoP proof, the nonce and replay; apply per-tool rules by leaving disallowed tools out of the list and refusing calls to them; forward to the mock with the gateway's own credential; audit the user and tool name, never the arguments. Proven by a test client (MCP gateway, filed: 0.2.0)
+- The broker as Claude Code's local MCP endpoint: a second loopback listener protected by the session secret, tools and MCP enabled in the launched CLI, and Claude Code shown listing only the tools the user may call (MCP gateway, filed: 0.2.0)
+- A scripted mock model that asks for one MCP tool once, so Claude Code really calls it through the broker and gateway and prints the result (MCP gateway, filed: 0.2.0)
+- Tool use in the Bedrock adapter, then a real model choosing to call an MCP tool; needs paid AWS time (MCP gateway, filed: 0.2.0)
 - Sign the Secure Enclave helper and decide how it authorizes its caller (Sender-constrained access, filed: 0.1.0)
 
 ## Debt register
