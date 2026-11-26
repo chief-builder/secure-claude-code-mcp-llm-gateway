@@ -166,8 +166,10 @@ Checks that were planned but not completed:
 - Calling the gateway with a debugger-recovered token and key (Component 6).
 - Observing the operating system refuse signing during screen lock,
   independently of the helper's own lock check (Component 7).
-- Final billed-cost reconciliation and budget-alert email delivery
-  (Component 8).
+- Reading the final November invoice for the live Bedrock run. The estimate, about
+  $0.04, and the budget alert's verified recipient are
+  [recorded](workflow/releases/0.2.0/close-pending-checks/billing-check.md); no
+  alert email has been observed arriving (Component 8).
 
 ## How this was built
 

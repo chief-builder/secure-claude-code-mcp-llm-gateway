@@ -1,6 +1,6 @@
 # Check 1: billed cost of the live Bedrock run, and budget alert email
 
-Status: cost estimate recorded; alert email not yet deliverable; final invoice due early December
+Status: closed by the owner on 2026-11-26, with two follow-ups carried to the backlog
 
 ## What is being checked
 
@@ -167,12 +167,19 @@ not reached. But its one email recipient is shown as "Pending" verification, wit
 So an alert at $1 or $4 would not have reached anyone. The Component 8 record's
 "alert configuration healthy" was true of the thresholds and not of delivery.
 
-### Still open
+### 2026-11-26 — recipient address verified; check closed
 
-- Verify the recipient address (Budgets, the budget, "Resend verification", then the
-  link in the email), and confirm the status changes to verified.
-- Then run the one-cent test alert in step E, record when the email arrives, and
-  remove the test alert.
-- Identify the remaining key pair in `us-east-1`, and delete it if it is the run's.
-- Read the November bill again once its status is no longer "Pending", in early
-  December, and record the final figures.
+The owner verified the budget's recipient address. The console now shows the
+recipient as "Verified" with its two alerts attached, so the $1 and $4 alerts can
+reach an inbox. Verifying required receiving an email from AWS at that address and
+acting on it, which shows mail from AWS arrives there.
+
+The owner closed the check at this point. What that leaves:
+
+- **The one-cent test alert in step E was not run.** No budget alert email has been
+  observed arriving. Delivery is supported by the verified address, not proven by a
+  received alert. Accepted by the owner.
+- **The final invoice has not been read.** The figures above are the estimate while
+  the November bill is pending. Carried to the backlog.
+- **The remaining key pair in `us-east-1` was not identified.** It costs nothing.
+  Carried to the backlog with the invoice.

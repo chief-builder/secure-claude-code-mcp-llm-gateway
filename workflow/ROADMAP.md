@@ -37,7 +37,8 @@ What each task is:
   the owner's hardware or accounts and no AWS deployment: reachability from a second
   device, calling the gateway with a debugger-recovered token and software key,
   observing the operating system refuse to sign during screen lock, and reconciling
-  the billed cost of the live Bedrock run with its budget alert.
+  the billed cost of the live Bedrock run with its budget alert. The billing check is
+  closed; the other three are open.
 - **shape-mcp-gateway** — a design conversation, no code: who it is for, the
   smallest useful version, what it reuses.
 - **shape-aws-hosted-identity** — a design conversation, no code: what it means to
@@ -79,6 +80,7 @@ pruned without guilt.
 - Tool use in the Bedrock adapter, then a real model choosing to call an MCP tool; needs paid AWS time (MCP gateway, filed: 0.2.0)
 - Compare the token flow with MCP's Enterprise-Managed Authorization extension and decide whether to offer it alongside. It decides at the identity provider and takes two token requests where ours takes one; the IETF draft under it allows DPoP-bound grants and tokens, so it need not mean bearer tokens. Keycloak can accept such grants only experimentally and cannot issue them (MCP gateway, filed: 0.2.0)
 - Let an upstream MCP server ask the user for input mid-call (the specification's multi-round-trip requests) and long-lived change notifications; the first gateway version refuses both (MCP gateway, filed: 0.2.0)
+- Read the November 2026 AWS bill once it is final and record the figures against the estimate of about $0.04 for the live Bedrock run; at the same time identify the one key pair left in `us-east-1` and delete it if it belonged to the run (Gateway and inference, filed: 0.2.0)
 - Sign the Secure Enclave helper and decide how it authorizes its caller (Sender-constrained access, filed: 0.1.0)
 
 ## Debt register
