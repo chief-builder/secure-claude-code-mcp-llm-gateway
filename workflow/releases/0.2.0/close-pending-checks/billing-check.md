@@ -1,6 +1,6 @@
 # Check 1: billed cost of the live Bedrock run, and budget alert email
 
-Status: waiting for the owner's results
+Status: cost estimate recorded; alert email not yet deliverable; final invoice due early December
 
 ## What is being checked
 
@@ -129,4 +129,50 @@ the account number and the email address; neither goes into the repository.
 
 ## Results
 
-Not yet run.
+### 2026-11-26 — first reading, from the Billing console
+
+The owner took the readings in the AWS console and supplied screenshots. The account
+number and email address shown in them are deliberately not recorded here.
+
+**1. What the run cost: about $0.04, against a $5 ceiling.**
+
+| Service, November to date | Amount | Note |
+|---|---|---|
+| Route 53 | $0.50 | The existing monthly charge, unrelated to the run |
+| EC2 instances | $0.03 | All on 23 November (UTC), the day of the run |
+| VPC | $0.01 | The public address, also on 23 November |
+| Claude Haiku 4.5 (Bedrock) | $0.00 | Present on 23 November but under half a cent |
+| EC2 other (the disk) | $0.00 | Under half a cent |
+| S3, CloudShell, Glue, KMS, CloudWatch, tax | $0.00 | |
+| Month-to-date total | $0.53 to $0.54 | Cost Explorer shows $0.53, the Bills page $0.54; the difference is rounding |
+
+The run's own charges appear only on 23 November and come to about $0.04. That is
+slightly below the estimate above and less than one percent of the approved ceiling.
+The console rounds to the cent, so the model charge is known only to be under half a
+cent.
+
+These are estimates. The Bills page shows the November bill as "Pending".
+
+**2. Nothing from the run is still billing.** In `us-east-1` the EC2 dashboard
+shows no instances, no volumes, no snapshots and no Elastic IPs. It shows three
+security groups and one key pair, neither of which costs anything. The key pair is
+worth identifying, because the Component 8 record says the run's key registration
+was deleted.
+
+**3. The budget alert cannot deliver an email as configured.** The budget
+`llm-gateway-lab-monthly-5usd` is healthy, at $0.54 of $5.00, with its thresholds
+not reached. But its one email recipient is shown as "Pending" verification, with
+"0/1 email verified", and the console states that recipients added on or after
+30 September 2026 must verify their address before they can receive budget alerts.
+So an alert at $1 or $4 would not have reached anyone. The Component 8 record's
+"alert configuration healthy" was true of the thresholds and not of delivery.
+
+### Still open
+
+- Verify the recipient address (Budgets, the budget, "Resend verification", then the
+  link in the email), and confirm the status changes to verified.
+- Then run the one-cent test alert in step E, record when the email arrives, and
+  remove the test alert.
+- Identify the remaining key pair in `us-east-1`, and delete it if it is the run's.
+- Read the November bill again once its status is no longer "Pending", in early
+  December, and record the final figures.
