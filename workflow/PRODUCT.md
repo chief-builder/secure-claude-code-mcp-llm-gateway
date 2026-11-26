@@ -34,7 +34,8 @@ file says why it matters. Grown by the shape playbook; statuses kept true by hyg
 - Gateway authentication and authorization — done
 - Mock LLM backend — done
 - AWS Bedrock Converse backend, text only — done
-- Tool use, images and thinking — idea
+- Tool use in the Bedrock adapter — planned
+- Images and thinking — idea
 
 ### Local credential broker
 
@@ -43,7 +44,18 @@ file says why it matters. Grown by the shape playbook; statuses kept true by hyg
 
 ### MCP gateway
 
-- Securing MCP server access through the same identity and token model — idea
+Claude Code calling tools on MCP servers under the user's identity, with tokens that
+cannot be replayed and tool-server credentials that never reach the laptop.
+Decision: [MCP through the broker, with its own tokens and per-tool rules](decisions/0003-mcp-through-the-broker-with-its-own-tokens.md).
+
+- Tokens for MCP with their own audience and scope, from the existing token exchange — planned
+- A mock MCP server with harmless tools — planned
+- MCP gateway: token, DPoP proof and replay checks, then per-tool rules — planned
+- Broker as the local MCP endpoint for Claude Code — planned
+- Claude Code really calling a tool, driven by a scripted mock model — planned
+- A real model on Bedrock choosing to call a tool — planned
+- Upstream servers asking the user for input mid-call, and change notifications — idea
+- MCP's Enterprise-Managed Authorization extension as an alternative token flow — idea
 
 ### Hosted identity services
 
@@ -68,3 +80,6 @@ Documentation — done: a one-page quickstart, task-based component READMEs, a g
 - Not for real identities, production credentials or sensitive data.
 - Not a general-purpose proxy: one route, text only, fixed loopback addresses.
 - Not a supported product: no guaranteed fixes or response times.
+- Not a gateway for ordinary MCP clients that sign in on their own: those get bearer
+  tokens, which is the weakness this project exists to remove.
+- Not a front for real tool servers with real credentials: mock tools only.
