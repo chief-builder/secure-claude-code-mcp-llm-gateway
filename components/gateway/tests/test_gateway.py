@@ -466,3 +466,25 @@ def test_gateway_dpop_replay_across_processes(lab, tmp_path):
                     worker.terminate()
                 worker.join(timeout=5)
         result.close()
+
+
+def test_lab_client_assertion_follows_rfc_10070(monkeypatch):
+    """The client the probe and the broker use marks its assertion as RFC 10070 recommends."""
+    import lab_invoke
+    from types import SimpleNamespace
+
+    sent = []
+
+    def token_endpoint(request):
+        sent.append(dict(httpx.QueryParams(request.content.decode())))
+        return httpx.Response(200, json={"access_token": "synthetic", "token_type": "Bearer"})
+
+    monkeypatch.setattr(lab_invoke, "tls_client",
+                        lambda _: httpx.Client(transport=httpx.MockTransport(token_endpoint)))
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    token = lab_invoke.exchange_token(SimpleNamespace(as_ca=None), "subject-token", None, signing_key=key)
+    assert token == "synthetic" and len(sent) == 1
+    assertion = sent[0]["client_assertion"]
+    assert jwt.get_unverified_header(assertion)["typ"] == "client-authentication+jwt"
+    claims = jwt.decode(assertion, key.public_key(), algorithms=["RS256"], audience=gateway.ISSUER)
+    assert claims["aud"] == gateway.ISSUER and claims["iss"] == claims["sub"] == gateway.CLIENT

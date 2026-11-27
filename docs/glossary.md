@@ -102,8 +102,8 @@ identity to the authorization server: it signs a short-lived JWT with its privat
 key instead of sending a shared password.
 [RFC 7523](https://www.rfc-editor.org/rfc/rfc7523.html), as updated by
 [RFC 10070](https://www.rfc-editor.org/rfc/rfc10070.html): the assertion names the
-authorization server's issuer as its only audience and is marked with the type
-`client-authentication+jwt`.
+authorization server's issuer as its only audience, and the lab's clients mark it
+with the type `client-authentication+jwt`, as the RFC recommends.
 
 ### Bearer token
 

@@ -20,7 +20,7 @@ Target: not set · Theme: the MCP gateway's first stage, in the local lab
 
 | Task | Capability | Status | Artifacts |
 |------|------------|--------|-----------|
-| rfc-10070-assertion-type | Sign-in and token issuance | in-progress | [workflow/releases/0.3.0/rfc-10070-assertion-type/](releases/0.3.0/rfc-10070-assertion-type/) |
+| rfc-10070-assertion-type | Sign-in and token issuance | shipped | [workflow/releases/0.3.0/rfc-10070-assertion-type/](releases/0.3.0/rfc-10070-assertion-type/) |
 | mcp-tokens | MCP gateway | backlog | — |
 | mock-mcp-server | MCP gateway | backlog | — |
 | mcp-gateway | MCP gateway | backlog | — |

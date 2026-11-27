@@ -32,7 +32,6 @@ ASSERTION = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 # RFC 10070: clients should type their assertion, and servers should not reject
 # untyped ones. "JWT" is the generic type many libraries add by default.
 ASSERTION_TYPE = "client-authentication+jwt"
-ACCEPTED_ASSERTION_TYPES = (ASSERTION_TYPE, "JWT", None)
 ACCESS = "urn:ietf:params:oauth:token-type:access_token"
 REQUIRED = {"grant_type", "subject_token", "subject_token_type", "audience", "scope"}
 AUTH_FIELDS = {"client_assertion", "client_assertion_type"}
@@ -54,6 +53,18 @@ def signing_keys(jwks):
         for key in jwks["keys"]
         if (key.get("kty"), key.get("use"), key.get("alg")) == ("RSA", "sig", "RS256")
     }
+
+
+def accepted_assertion_type(value):
+    """True for no type, the generic type, or the client authentication type.
+
+    RFC 7515 treats `typ` as a media type name: case does not matter and a leading
+    "application/" is optional.
+    """
+    if value is None:
+        return True
+    return (isinstance(value, str)
+            and value.lower().removeprefix("application/") in (ASSERTION_TYPE, "jwt"))
 
 
 def token_parts(token):
@@ -185,7 +196,7 @@ class Exchange:
             header, claims = token_parts(token)
             verify(token, self.client_keys[header["kid"]])
             jti = claims.get("jti")
-            if (header.get("typ") not in ACCEPTED_ASSERTION_TYPES
+            if (not accepted_assertion_type(header.get("typ"))
                     or claims.get("iss") != CLIENT or claims.get("sub") != CLIENT
                     # The issuer identifier is the only accepted audience (RFC 10070).
                     or claims.get("aud") != ISSUER

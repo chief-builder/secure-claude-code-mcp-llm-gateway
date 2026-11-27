@@ -166,19 +166,35 @@ def test_client_assertion_type(profile):
     async def check():
         async with running(app()) as client:
             # RFC 10070: accept the explicit type, and do not reject untyped assertions.
-            for accepted, sent in ((ASSERTION_TYPE, "client-authentication+jwt"), ("JWT", "JWT"), (None, "absent")):
+            # RFC 7515: the type is a media type name, so case and "application/" do not matter.
+            for accepted, sent in (
+                (ASSERTION_TYPE, "client-authentication+jwt"), ("JWT", "JWT"), (None, "absent"),
+                ("jwt", "jwt"), ("application/jwt", "application/jwt"),
+                ("Application/Client-Authentication+JWT", "Application/Client-Authentication+JWT"),
+            ):
                 request = form(client_type=accepted)
                 assert header_type(request) == sent
                 assert (await client.post("/token", data=request)).status_code == 200
-            # An assertion that declares itself another kind of token is refused,
-            # and refusing it spends neither the assertion nor the subject token.
-            for other in ("at+jwt", "dpop+jwt", "client-authentication+jwt ", "jwt"):
-                request = form(client_type=other)
+            # An assertion that declares itself another kind of token is refused, and
+            # refusing it spends neither its identifier nor the subject token: the same
+            # identifier and subject token are accepted once the type is right.
+            for other in ("at+jwt", "dpop+jwt", "application/at+jwt", "client-authentication+jwt ",
+                          "JWT+client-authentication", "application/"):
+                identifier = secrets.token_urlsafe(24)
+                request = form(client_type=other, client_claims={"jti": identifier})
                 rejected(await client.post("/token", data=request), "invalid_client")
-                retry = form(request["subject_token"])
+                retry = form(request["subject_token"], client_claims={"jti": identifier})
                 assert (await client.post("/token", data=retry)).status_code == 200
+                rejected(await client.post("/token", data=retry), "invalid_client")
 
     asyncio.run(check())
+
+
+@pytest.mark.parametrize("value", [0, 1, True, False, ["JWT"], [], {"a": 1}, {}, ""])
+def test_assertion_type_must_be_a_known_string_or_absent(value):
+    from exchange import accepted_assertion_type
+    assert accepted_assertion_type(value) is False
+    assert accepted_assertion_type(None) is True
 
 
 def test_subject_claims_and_dependencies(profile, monkeypatch):

@@ -116,5 +116,6 @@ accepted against empty state.
   stops a second exchange, not the first.
 - No refresh tokens. Access tokens last at most five minutes.
 - The server accepts a client assertion typed `client-authentication+jwt`, typed
-  `JWT`, or untyped, and rejects any other declared type. It does not require the
-  explicit type, as RFC 10070 advises.
+  `JWT`, or untyped, and rejects any other declared type. The type is compared as
+  a media type name: case and a leading `application/` do not matter. It does not
+  require the explicit type, as RFC 10070 advises.

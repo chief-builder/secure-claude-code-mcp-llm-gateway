@@ -18,8 +18,8 @@ as used.
 | 1 | Server: accept `client-authentication+jwt`, `JWT` and no type; reject other types. Cite the RFC in the comment | New tests for each case pass; the existing 55 pass | **done** |
 | 2 | Clients: `lab_exchange.py` and `lab_invoke.py` set the type; the tests' default assertion uses it | All suites pass | **done** |
 | 3 | Documents: glossary, the authorization server README, the Component 3 design note, the roadmap | Documentation check passes; no stale citation | **done** |
-| 4 | Live lab run from a fresh clone | Broker exits 0 with `MOCK_OK`; DPoP probe succeeds | todo |
-| 5 | Verifier agent, then land | Acceptance criteria met | todo |
+| 4 | Live lab run from a fresh clone | Broker exits 0 with `MOCK_OK`; DPoP probe succeeds | **done** |
+| 5 | Verifier agent, then land | Acceptance criteria met | **done** |
 
 **Risks.** A client somewhere that sends an unusual type would start being
 rejected; in this lab the only clients are the two being changed. The signing
