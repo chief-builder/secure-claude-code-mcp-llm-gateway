@@ -17,7 +17,7 @@ module, and is easy to remove.
 | 3 | Tests that pin each row of the spec's two tables | Tests pass and state the status and code observed | **done** |
 | 4 | README, CI, root README, glossary, decision record, diagram page | Documentation check passes | **done** |
 | 5 | Real artifact: start the server and connect the installed Claude Code to it | Claude Code reports both tools | **done** |
-| 6 | Verifier agent, then land | Acceptance criteria met | todo |
+| 6 | Verifier agent, then land | Acceptance criteria met | **done** (merge awaits the owner) |
 
 **Risks.** The SDK's API for version 2 is new to this project; the trial run covered
 the calls needed. The test for `GET` has to observe a reply that never arrives,

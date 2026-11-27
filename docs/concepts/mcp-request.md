@@ -41,14 +41,19 @@ flowchart LR
     end
     H -->|"read by"| G["A gateway deciding<br/>whether to allow it"]
     B -->|"read by"| S["The server that<br/>runs the tool"]
-    G -.->|"must check the two agree"| B
+    S -.->|"must refuse the request<br/>if the two disagree"| H
 ```
 
 The headers exist so that something in the middle, such as a gateway, can see which
 tool is being called without having to understand the whole body. That creates a
 risk: if the headers said one tool and the body another, a gateway could approve one
-call while the server ran a different one. So the protocol requires whoever reads
-the body to check that the two agree, and to refuse the request if they do not.
+call while the server ran a different one. So the protocol requires the server to
+check that the two agree, and to refuse the request if they do not.
+
+That protection exists only in this revision. A request that names an older
+revision in its header, or none, is not checked this way. The protocol therefore
+advises a gateway that decides from the headers to refuse any request whose
+`MCP-Protocol-Version` header is missing or older.
 
 ## What comes back
 
@@ -56,7 +61,7 @@ the body to check that the two agree, and to refuse the request if they do not.
 |---|---|
 | The tool ran | A result containing the tool's output |
 | The tool was given bad arguments | A normal result, flagged as an error, so the model can read it and try again |
-| The headers and body disagree | Refused, HTTP 400 |
+| The headers and body disagree, in a request whose header names this revision | Refused, HTTP 400 |
 | The revision is not one the server speaks | Refused, HTTP 400, naming the revisions it does speak |
 | The method does not exist | Refused, HTTP 404 |
 
@@ -64,17 +69,24 @@ A list of tools also says how long it may be cached and whether a shared cache m
 hand it to other users. That matters later: a gateway that shows each user only the
 tools they are allowed must mark its list as private.
 
-## Where the lab's mock differs from the protocol's text
+## What a gateway cannot leave to the lab's mock
 
-The mock is built with the official MCP software kit, and that kit is more
-permissive than the written protocol in four places. The mock leaves them as they
-are, its tests record them, and the MCP gateway will be strict about each:
+The mock is built with the official MCP software kit. Its tests record the
+following, and the MCP gateway will be strict about each.
+
+One departure from the protocol's text:
 
 - A call to a tool that does not exist comes back as a result flagged as an error,
   not as the protocol's "unknown tool" error.
-- Older revisions are still accepted, even when the revision header disagrees with
-  the body.
-- A `GET` opens a long-lived stream, a feature of older revisions.
+
+Three things the protocol permits, because the kit also serves clients built for
+older revisions:
+
+- It picks the rules from the `MCP-Protocol-Version` header alone. Without
+  `2026-07-28` there, it does not compare headers with body: headers naming
+  `lab_echo` over a body that calls `lab_add` run `lab_add`. So the gateway must
+  require that header from its caller and send it on what it forwards.
+- Under the older rules a `GET` opens a long-lived stream.
 - The server says it offers prompts and resources as well as tools.
 
 Code: [`mock-mcp/mock_mcp.py`](../../components/mock-mcp/mock_mcp.py) and its

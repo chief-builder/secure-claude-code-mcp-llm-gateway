@@ -12,7 +12,9 @@ HOST, PORT = "127.0.0.1", 8767
 
 def build_server():
     # Every caller sees the same two tools, so the list may be cached by anyone.
-    server = MCPServer("lab-mock-mcp", version="0.1.0", log_level="WARNING",
+    # Subscriptions are off: left on, the SDK serves subscriptions/listen as a
+    # long-lived stream, and this mock answers every request with one JSON object.
+    server = MCPServer("lab-mock-mcp", version="0.1.0", log_level="WARNING", subscriptions=False,
                        cache_hints={"tools/list": CacheHint(ttl_ms=60_000, scope="public")})
 
     @server.tool()

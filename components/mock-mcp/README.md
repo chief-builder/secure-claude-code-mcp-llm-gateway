@@ -39,7 +39,9 @@ its tool both in headers and in the body, as the protocol requires;
 
 To see Claude Code connect to it directly, with no gateway in between, give it the
 address and the credential as a header. Claude Code then lists `lab_echo` and
-`lab_add` among its tools:
+`lab_add` among its tools. This starts Claude Code with whatever model access you
+normally use; the check recorded for this component used the
+[mock model](../mock-llm/README.md) instead:
 
 ```sh
 claude --mcp-config "{\"mcpServers\":{\"lab\":{\"type\":\"http\",\"url\":\"http://127.0.0.1:8767/mcp\",\"headers\":{\"Authorization\":\"Bearer $MOCK_MCP_TOKEN\"}}}}"
@@ -54,7 +56,7 @@ front of it is the next piece to be built.
 uv run python -m pytest -q
 ```
 
-Expect 21 passed. All tests run offline.
+Expect 28 passed. All tests run offline.
 
 ## How it works
 
@@ -74,10 +76,14 @@ Expect 21 passed. All tests run offline.
   JSON object.
 - Its credential is a secret shared with whoever calls it, on loopback, like the
   mock LLM's. It is not MCP's own OAuth-based authorization.
-- The SDK is looser than the MCP specification's text in four ways, each pinned by
-  a test. It answers a call to an unknown tool with a result flagged as an error,
-  not the "unknown tool" error. It also accepts older protocol revisions, even when
-  the revision header disagrees with the request body. It opens a long-lived stream
-  on `GET`. And it says it offers prompts and resources. The gateway has to be
-  strict about each of these itself.
+- An unknown tool is answered with a result flagged as an error, where the MCP
+  specification describes an "unknown tool" error. This is the SDK's behavior.
+- The SDK also serves clients built for older revisions of MCP, and picks the rules
+  from the `MCP-Protocol-Version` header alone. Without the value `2026-07-28` in
+  that header it does not compare the headers with the body, and `GET` opens a
+  long-lived stream. It also says it offers prompts and resources. The specification
+  permits all of this; the gateway has to be strict about each itself, and has to
+  send the header on what it forwards. Each behavior is pinned by a test.
+- The SDK's subscriptions are switched off, so nothing here streams under the
+  current revision.
 - It listens on plain HTTP and is meant for loopback only.

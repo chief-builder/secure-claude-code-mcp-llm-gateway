@@ -26,11 +26,16 @@ as a security reference, prefers checks it can point to in its own code.
 **Consequences.**
 
 - The gateway is tested against an independent implementation of the protocol. A
-  trial run already showed four places where the SDK is more permissive than the
-  protocol's text; each is pinned by a test and becomes a rule the gateway must
-  enforce itself.
+  trial run and the verification after it already showed one place where the SDK
+  departs from the protocol's text (an unknown tool) and several things the
+  protocol permits but the lab does not want, the most serious being that the SDK
+  compares headers with body only when the request's header names the current
+  revision. Each is pinned by a test and becomes a rule the gateway must enforce
+  itself.
 - Twelve more pinned packages are installed. Only the mock uses them, and none is on
   the path that issues or checks tokens.
+- The mock LLM's tests now run on `httpx2`, which the SDK brings, instead of the
+  pinned `httpx`, because the test client prefers it when installed.
 - The mock's behavior is partly the SDK's. An SDK upgrade can change it; the tests
   exist to make such a change visible.
 - The gateway's tests will still need small hand-made stand-ins for the malformed
