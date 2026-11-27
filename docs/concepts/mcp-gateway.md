@@ -62,7 +62,7 @@ flowchart TD
     P -->|"yes"| S{"Lab client and<br/>mcp:invoke scope?"}
     S -->|"no"| X5["403"]
     S -->|"yes"| H{"Headers agree<br/>with the body?"}
-    H -->|"no"| X6["400"]
+    H -->|"no"| X6["400, 413 or 415"]
     H -->|"yes"| Y{"Proof unused?"}
     Y -->|"no"| X7["401"]
     Y -->|"yes"| M{"Which method?"}
@@ -102,15 +102,23 @@ the name could still ask for it.
 | Any other field of the request | No. The gateway builds a new request from named fields |
 | The protocol revision | The gateway always sends 2026-07-28, in the header and the body, so the tool server applies this revision's rules |
 
-And in the other direction, the gateway passes back only a complete result. A reply
-that is a stream, asks for input, or hands back a task is refused.
+And in the other direction, the gateway passes back only a complete result, with
+the tool server's own name and any extra fields removed. A reply that is a stream,
+asks for input, or hands back a task is refused.
 
 ## Why the gateway answers discovery itself
 
 `server/discover` asks a server which kinds of feature it offers. The gateway
 answers "tools only" under its own name, without asking the tool server. The tool
 server would also claim prompts and resources, which the gateway refuses, and would
-reveal what software sits behind the gateway.
+give its own name and version.
+
+## What the gateway does not vouch for
+
+The gateway checks the shape of what a tool server sends back, not its wording.
+Tool descriptions, argument schemas and results, including error text, are relayed
+as received and will be read by the model. A gateway like this controls who may
+call which tool; it does not make an untrusted tool server safe to listen to.
 
 Code: [`mcp_gateway.py`](../../components/gateway/mcp_gateway.py) and its
 [tests](../../components/gateway/tests/test_mcp_gateway.py). How to run it:

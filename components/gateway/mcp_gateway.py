@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import base64
 import binascii
+import json
 import logging
 import os
 import re
@@ -82,6 +83,18 @@ def load_tool_policy(path):
     return policy
 
 
+def sendable_json(body):
+    """Strict JSON that can also be written back out.
+
+    Python reads an out-of-range number as infinity and accepts half of a character
+    pair, and neither can be sent on. Refusing them here means a request or a reply
+    is refused as malformed instead of failing later, when it is relayed.
+    """
+    data = strict_json(body)
+    json.dumps(data, allow_nan=False, ensure_ascii=False).encode("utf-8")
+    return data
+
+
 def header_text(value):
     """Decode the MCP specification's Base64 form of a header value, if used."""
     match = re.fullmatch(r"=\?base64\?([A-Za-z0-9+/]*={0,2})\?=", value)
@@ -108,7 +121,7 @@ async def read_request(request):
             raise Failure(413, "body_too_large")
         body.extend(chunk)
     try:
-        data = strict_json(body)
+        data = sendable_json(body)
     except (FoundationError, ValueError, RecursionError):
         raise Failure(400, "invalid_json") from None
     call_id, method, params = data.get("id"), data.get("method"), data.get("params")
@@ -178,7 +191,8 @@ def checked_result(method, reply, allowed):
     if method == "tools/list":
         tools, cursor = result.get("tools"), result.get("nextCursor")
         if (not isinstance(tools, list) or not isinstance(cursor, (str, type(None)))
-                or not all(isinstance(tool, dict) and isinstance(tool.get("name"), str) for tool in tools)):
+                or not all(isinstance(tool, dict) and isinstance(tool.get("name"), str) for tool in tools)
+                or len({tool["name"] for tool in tools}) != len(tools)):
             raise ValueError
         # Private and uncached: the list differs per user, whatever the tool server says.
         kept = {"resultType": "complete", "tools": [tool for tool in tools if tool["name"] in allowed],
@@ -187,7 +201,8 @@ def checked_result(method, reply, allowed):
             kept["nextCursor"] = cursor
         return kept
     content, structured = result.get("content"), result.get("structuredContent")
-    if (not isinstance(content, list) or type(result.get("isError", False)) is not bool
+    if (not isinstance(content, list) or not all(isinstance(item, dict) for item in content)
+            or type(result.get("isError", False)) is not bool
             or not isinstance(structured, (dict, type(None)))):
         raise ValueError
     kept = {"resultType": "complete", "content": content, "isError": result.get("isError", False)}
@@ -198,9 +213,10 @@ def checked_result(method, reply, allowed):
 
 async def forward(client, credential, method, params, allowed):
     invalid = Failure(502, "invalid_upstream_response")
+    request = upstream_request(credential, method, params)
     try:
         async with asyncio.timeout(DEADLINE):
-            upstream = await client.send(upstream_request(credential, method, params), stream=True)
+            upstream = await client.send(request, stream=True)
             try:
                 if (upstream.status_code != 200
                         or upstream.headers.get("content-type", "").split(";", 1)[0].strip().lower() != "application/json"
@@ -213,7 +229,7 @@ async def forward(client, credential, method, params, allowed):
                     body.extend(chunk)
             finally:
                 await upstream.aclose()
-        return checked_result(method, strict_json(body), allowed)
+        return checked_result(method, sendable_json(body), allowed)
     except (TimeoutError, httpx.TimeoutException):
         raise Failure(504, "upstream_timeout") from None
     except httpx.HTTPError:
@@ -243,9 +259,12 @@ async def until_finished_or_disconnected(request, work):
 def refusal(failure, request_id):
     headers = {"request-id": request_id, "cache-control": "no-store"}
     if failure.challenge:
-        # The LLM gateway's challenge for this kind of refusal, plus where to find the metadata.
-        separator = "," if " " in failure.challenge else ""
-        headers["www-authenticate"] = f'{failure.challenge}{separator} resource_metadata="{METADATA}"'
+        # The LLM gateway's challenge for this kind of refusal, plus the scope to ask
+        # for and where to find the metadata, as the MCP specification asks.
+        challenge = failure.challenge + ("," if " " in failure.challenge else "")
+        if "scope=" not in challenge:
+            challenge += f' scope="{MCP_SCOPE}",'
+        headers["www-authenticate"] = f'{challenge} resource_metadata="{METADATA}"'
     if failure.nonce is not None:
         headers["dpop-nonce"] = failure.nonce
     return Response(status_code=failure.status, headers=headers)
@@ -289,7 +308,7 @@ def create_app(as_ca, upstream_credential, policy, *, dpop_nonce_key, dpop_repla
     @app.get(METADATA_PATH)
     async def metadata():
         return {"resource": MCP_RESOURCE, "authorization_servers": [ISSUER],
-                "scopes_supported": [MCP_SCOPE], "bearer_methods_supported": ["header"],
+                "scopes_supported": [MCP_SCOPE], "bearer_methods_supported": [],
                 "dpop_bound_access_tokens_required": True,
                 "dpop_signing_alg_values_supported": ["ES256"]}
 

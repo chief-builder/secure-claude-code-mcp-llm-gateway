@@ -106,7 +106,7 @@ Expect the CLI to print `MOCK_OK`, followed by
 uv run python -m pytest -q
 ```
 
-Expect 149 passed: 97 for the LLM gateway and 52 for the MCP gateway. All tests run
+Expect 160 passed: 97 for the LLM gateway and 63 for the MCP gateway. All tests run
 offline. The Bedrock tests use injected SDK clients
 or the SDK's own stubber with synthetic credentials; they never resolve AWS
 credentials or call Bedrock.

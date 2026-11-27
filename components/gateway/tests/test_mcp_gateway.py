@@ -28,7 +28,8 @@ META = {mcp_gateway.PROTOCOL_VERSION: VERSION,
         mcp_gateway.CAPABILITIES: {"elicitation": {"form": {}, "url": {}}, "roots": {}}}
 KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 JWK = public_jwk(KEY.public_key())
-NONCE = 'DPoP error="use_dpop_nonce", resource_metadata="' + mcp_gateway.METADATA + '"'
+HINT = f'scope="mcp:invoke", resource_metadata="{mcp_gateway.METADATA}"'
+NONCE = f'DPoP error="use_dpop_nonce", {HINT}'
 
 
 class Upstream(httpx.AsyncBaseTransport):
@@ -214,21 +215,27 @@ def test_a_user_the_policy_does_not_name_has_no_tools(tmp_path):
     ({"scope": gateway.SCOPE}, 403, 'DPoP error="insufficient_scope", scope="mcp:invoke"'),
     ({"client_id": "another-client"}, 403, None),
 ])
-def test_refuses_a_token_that_is_not_a_valid_mcp_token(lab, claims, status, challenge):
+def test_refuses_a_token_that_is_not_a_valid_mcp_token(lab, claims, status, challenge, caplog):
     async def check(client):
         # Obtain a nonce with a good token first, so the refusal is for the token alone.
         assert (await lab.post(client, *rpc("server/discover"))).status_code == 200
+        caplog.clear()
+        caplog.set_level(logging.INFO, logger="uvicorn.error")
         refused = await lab.post(client, *call("lab_echo", {"text": "x"}), token=lab.token(**claims))
         assert refused.status_code == status and refused.content == b""
-        expected = challenge and f'{challenge}, resource_metadata="{mcp_gateway.METADATA}"'
+        expected = challenge and (f"{challenge}, {HINT}" if "scope=" not in challenge else
+                                  f'{challenge}, resource_metadata="{mcp_gateway.METADATA}"')
         assert refused.headers.get("www-authenticate") == expected
+        assert refused.headers["cache-control"] == "no-store"
         assert not lab.sent
 
     lab.run(check)
+    # A caller refused before its client and scope are accepted is not named in the log.
+    assert SUBJECT not in caplog.text
 
 
 def test_refuses_wrong_or_ambiguous_credentials(lab):
-    metadata = f'resource_metadata="{mcp_gateway.METADATA}"'
+    metadata = HINT
 
     async def check(client):
         token = lab.token()
@@ -259,7 +266,7 @@ def test_refuses_a_missing_wrong_or_replayed_proof(lab):
         assert (challenged.status_code, challenged.headers["www-authenticate"]) == (401, NONCE)
         lab.signer.remember_nonce(MCP_RESOURCE, challenged)
 
-        invalid = f'DPoP error="invalid_dpop_proof", resource_metadata="{mcp_gateway.METADATA}"'
+        invalid = f'DPoP error="invalid_dpop_proof", {HINT}'
         no_proof = await client.post("/mcp", json=body, headers=credential)
         assert (no_proof.status_code, no_proof.headers["www-authenticate"]) == (401, invalid)
 
@@ -357,12 +364,32 @@ def test_refuses_everything_else(lab):
         large = json.dumps({**body, "pad": "x" * mcp_gateway.BODY_LIMIT}).encode()
         assert (await lab.post(client, None, headers, content=large)).status_code == 413
         assert (await lab.post(client, body, {**headers, "content-type": "text/plain"})).status_code == 415
+        assert (await lab.post(client, body, {**headers, "content-encoding": "gzip"})).status_code == 415
+        token = lab.token()
+        assert (await client.post("/mcp?x=1", json=body, headers={
+            **headers, "authorization": f"DPoP {token}", "dpop": lab.signer.sign(MCP_RESOURCE, token)})).status_code == 400
+        # Values Python can read but cannot write back out: refused as malformed, never a crash.
+        for unsendable in (b'{"jsonrpc":"2.0","id":"\\ud800","method":"tools/list","params":{}}',
+                           b'{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"lab_echo",'
+                           b'"arguments":{"text":1e400},"_meta":{}}}',
+                           b'{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"lab_echo",'
+                           b'"arguments":{"text":"\\udc00"},"_meta":{}}}'):
+            refused = await lab.post(client, None, headers, content=unsendable)
+            assert refused.status_code == 400 and refused.content == b""
         assert (await lab.post(client, body, {**headers, "origin": "https://127.0.0.1:8083"})).status_code == 403
         for method in ("GET", "DELETE", "PUT"):
             assert (await client.request(method, "/mcp")).status_code == 405
         assert not lab.sent
 
     lab.run(check)
+
+
+def in_small_chunks(request):
+    # Too large only in total: no single piece is over the limit.
+    padded = json.dumps({**GOOD, "result": {**GOOD["result"], "content": [
+        {"type": "text", "text": "x" * mcp_gateway.REPLY_LIMIT}]}}).encode()
+    pieces = [padded[start:start + 65536] for start in range(0, len(padded), 65536)]
+    return httpx.Response(200, stream=Bytes(*pieces), headers={"content-type": "application/json"})
 
 
 def fake(result=None, **overrides):
@@ -405,7 +432,17 @@ def oversized(request):
     (lambda request: httpx.Response(200, stream=Bytes(b"{not json"), headers={"content-type": "application/json"}), 502),
     (lambda request: httpx.Response(200, stream=Bytes(b"[]"), headers={"content-type": "application/json"}), 502),
     (oversized, 502),
-    (lambda request: httpx.Response(200, json={}, headers={"content-encoding": "gzip"}), 502),
+    (in_small_chunks, 502),
+    (fake(jsonrpc="1.0"), 502),
+    (fake({"content": [1, "x", None]}), 502),
+    (lambda request: httpx.Response(200, stream=Bytes(
+        b'{"jsonrpc":"2.0","id":1,"result":{"resultType":"complete","content":[{"type":"text","text":1e400}]}}'),
+        headers={"content-type": "application/json"}), 502),
+    (lambda request: httpx.Response(200, stream=Bytes(
+        b'{"jsonrpc":"2.0","id":1,"result":{"resultType":"complete","content":[{"type":"text","text":"\\udc00"}]}}'),
+        headers={"content-type": "application/json"}), 502),
+    (lambda request: httpx.Response(200, stream=Bytes(json.dumps(GOOD).encode()),
+                                    headers={"content-type": "application/json", "content-encoding": "gzip"}), 502),
     (lambda request: (_ for _ in ()).throw(httpx.ConnectError("refused")), 502),
     (lambda request: (_ for _ in ()).throw(httpx.ReadTimeout("slow")), 504),
 ])
@@ -434,6 +471,16 @@ def test_a_tool_list_keeps_only_allowed_tools_and_the_page_marker(lab):
             "cursor": "page-1", "_meta": {mcp_gateway.PROTOCOL_VERSION: VERSION, mcp_gateway.CAPABILITIES: {}}}
         lab.fake = fake({"tools": [{"name": 5}]})
         assert (await lab.post(client, *rpc("tools/list"))).status_code == 502
+        lab.fake = fake({"tools": [{"name": "lab_echo"}, {"name": "lab_echo"}]})
+        assert (await lab.post(client, *rpc("tools/list"))).status_code == 502
+        # A call forwards its name and arguments and nothing else the caller added.
+        lab.fake, before = fake(), len(lab.sent)
+        body, headers = call("lab_echo", {"text": "x", "name": "lab_add"})
+        body["params"].update({"cursor": "c", "task": {"ttl": 1}, "unexpected": "dropped"})
+        assert (await lab.post(client, body, headers)).status_code == 200
+        assert json.loads(lab.sent[before].content)["params"] == {
+            "name": "lab_echo", "arguments": {"text": "x", "name": "lab_add"},
+            "_meta": {mcp_gateway.PROTOCOL_VERSION: VERSION, mcp_gateway.CAPABILITIES: {}}}
         lab.fake = fake({"tools": [], "nextCursor": 5})
         assert (await lab.post(client, *rpc("tools/list"))).status_code == 502
 
@@ -511,7 +558,7 @@ def test_metadata_is_public_and_says_dpop_is_required(lab):
         assert response.status_code == 200
         assert response.json() == {
             "resource": "https://127.0.0.1:8083/mcp", "authorization_servers": ["https://127.0.0.1:8081"],
-            "scopes_supported": ["mcp:invoke"], "bearer_methods_supported": ["header"],
+            "scopes_supported": ["mcp:invoke"], "bearer_methods_supported": [],
             "dpop_bound_access_tokens_required": True, "dpop_signing_alg_values_supported": ["ES256"]}
         assert mcp_gateway.METADATA == "https://127.0.0.1:8083/.well-known/oauth-protected-resource/mcp"
 
@@ -596,3 +643,34 @@ def test_refuses_a_request_that_did_not_arrive_over_https(lab):
         assert refused.status_code == 401 and "invalid_dpop_proof" in refused.headers["www-authenticate"]
 
     lab.run(check)
+
+
+class Canned:
+    """Stands in for the MCP gateway, to show each of the probe's own checks can fail."""
+
+    def __init__(self, **changes):
+        self.replies = {
+            "server/discover": {"result": {"capabilities": {"tools": {}}}},
+            "tools/list": {"result": {"tools": [{"name": "lab_echo"}], "cacheScope": "private"}},
+            "lab_echo": {"result": {"content": [{"type": "text", "text": "MCP_OK"}]}},
+            "lab_add": {"error": {"code": -32602, "message": "Unknown tool"}},
+            **changes}
+
+    def post(self, url, json, headers):
+        assert url == MCP_RESOURCE and headers["Mcp-Method"] == json["method"]
+        return httpx.Response(200, json=self.replies[json["params"].get("name", json["method"])],
+                              request=httpx.Request("POST", url))
+
+
+@pytest.mark.parametrize("changes", [
+    {"server/discover": {"result": {"capabilities": {"tools": {}, "prompts": {}}}}},
+    {"tools/list": {"result": {"tools": [{"name": "lab_echo"}, {"name": "lab_add"}], "cacheScope": "private"}}},
+    {"tools/list": {"result": {"tools": [{"name": "lab_echo"}], "cacheScope": "public"}}},
+    {"lab_echo": {"result": {"content": [{"type": "text", "text": "something else"}]}}},
+    {"lab_add": {"result": {"content": [{"type": "text", "text": "3"}]}}},
+    {"lab_add": {"error": {"code": -32602, "message": "Unknown tool: lab_add"}}},
+])
+def test_each_of_the_probes_checks_can_fail(changes):
+    mcp_probe(Canned(), "token", ProofClient())
+    with pytest.raises(ValueError):
+        mcp_probe(Canned(**changes), "token", ProofClient())

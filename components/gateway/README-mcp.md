@@ -126,7 +126,7 @@ rm -rf "$mcp_work"
 uv run python -m pytest -q tests/test_mcp_gateway.py
 ```
 
-Expect 52 passed. All tests run offline, against the SDK-built
+Expect 63 passed. All tests run offline, against the SDK-built
 [mock tool server](../mock-mcp/README.md) in the same process and against
 hand-made stand-ins for malformed replies.
 
@@ -156,6 +156,17 @@ hand-made stand-ins for malformed replies.
   where the MCP specification's own model is a bearer token, and the lab's
   authorization server has no sign-in page for such a client. The metadata is
   published because the specification requires it.
+- Tool descriptions, argument schemas and tool results come from the tool server
+  and are relayed as received. The gateway checks their shape, not their wording,
+  so a tool server's text, including its error messages, reaches the caller and
+  the model. Only tool servers you trust belong behind it.
+- A long tool list arrives in pages, and each page is filtered on its own. A page
+  can therefore come back empty with a marker for the next one, which tells a
+  caller that tools exist that they cannot see, though not which.
+- A tool the policy names but the tool server does not have is forwarded, and the
+  caller sees the tool server's own error.
+- Tools that ask for an argument to be copied into an `Mcp-Param` header are not
+  supported; the gateway does not forward those headers.
 - The policy is read once at startup, and it has no rules about a tool's arguments.
 - A user the policy does not name is a valid caller with no tools.
 - The audit log is the only record of who called which tool, since the tool server
