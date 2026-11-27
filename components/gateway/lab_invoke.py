@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 
 from gateway import CLIENT, ISSUER, SCOPE, TARGET
 from dpop import encode, token_hash, thumbprint
-from exchange import ASSERTION, GRANT
+from exchange import ASSERTION, ASSERTION_TYPE, GRANT
 from foundation import CANDIDATE, public_jwk
 from lab_exchange import ExchangeLogin, LoginError, login, tls_client
 
@@ -62,7 +62,7 @@ def exchange_token(args, subject, proof, *, signing_key=None):
             assertion = jwt.encode(
                 {"iss": CLIENT, "sub": CLIENT, "aud": ISSUER, "iat": now,
                  "exp": now + 30, "jti": secrets.token_urlsafe(24)},
-                key, algorithm="RS256", headers={"kid": kid},
+                key, algorithm="RS256", headers={"kid": kid, "typ": ASSERTION_TYPE},
             )
             headers = {"DPoP": proof.sign(endpoint)} if proof is not None else {}
             response = authority.post(endpoint, headers=headers, data={

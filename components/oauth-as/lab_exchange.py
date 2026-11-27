@@ -13,7 +13,7 @@ import jwt
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from exchange import ACCESS, ASSERTION, CLIENT, GRANT, SCOPE, TARGET
+from exchange import ACCESS, ASSERTION, ASSERTION_TYPE, CLIENT, GRANT, SCOPE, TARGET
 from foundation import CANDIDATE, EXCHANGE_CLIENT_JWKS, ISSUER, public_jwk
 
 from login import login
@@ -61,7 +61,7 @@ def probe(args):
             assertion = jwt.encode(
                 {"iss": CLIENT, "sub": CLIENT, "aud": ISSUER,
                  "iat": now, "exp": now + 30, "jti": secrets.token_urlsafe(24)},
-                key, algorithm="RS256", headers={"kid": kid},
+                key, algorithm="RS256", headers={"kid": kid, "typ": ASSERTION_TYPE},
             )
             return client.post(ISSUER + "/token", data={
                 "grant_type": GRANT, "subject_token": subject,

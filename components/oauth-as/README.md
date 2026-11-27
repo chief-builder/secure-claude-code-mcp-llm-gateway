@@ -115,4 +115,7 @@ accepted against empty state.
 - An ID token is a bearer credential for the minute it is accepted. One-time use
   stops a second exchange, not the first.
 - No refresh tokens. Access tokens last at most five minutes.
-- The client assertion's explicit type from the RFC 7523 update is not yet required.
+- The server accepts a client assertion typed `client-authentication+jwt`, typed
+  `JWT`, or untyped, and rejects any other declared type. The type is compared as
+  a media type name: case and a leading `application/` do not matter. It does not
+  require the explicit type, as RFC 10070 advises.

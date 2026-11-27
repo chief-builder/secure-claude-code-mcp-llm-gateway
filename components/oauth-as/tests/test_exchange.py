@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
 from app import create_app
 from dpop import Verifier, encode, thumbprint
-from exchange import ACCESS, ASSERTION, CLIENT, GRANT, SCOPE, TARGET
+from exchange import ACCESS, ASSERTION, ASSERTION_TYPE, CLIENT, GRANT, SCOPE, TARGET
 from foundation import EXCHANGE_CANDIDATE as CANDIDATE
 from foundation import ISSUER, UPSTREAM, public_jwk
 from test_foundation import issuer_transport, reply, running
@@ -36,7 +36,8 @@ def profile(local, upstream_key):
         return create_app(directory, certifi.where(), exchange_policy=policy,
                           dpop_nonce_key=dpop_nonce_key, transport=transport or issuer_transport(upstream_key))
 
-    def form(subject=None, *, source_claims=None, client_claims=None, client_key=key):
+    def form(subject=None, *, source_claims=None, client_claims=None, client_key=key,
+             client_type=ASSERTION_TYPE):
         now = int(time.time())
         if subject is None:
             subject = jwt.encode({
@@ -48,7 +49,7 @@ def profile(local, upstream_key):
         assertion = jwt.encode({
             "iss": CLIENT, "sub": CLIENT, "aud": ISSUER, "iat": now,
             "exp": now + 30, "jti": secrets.token_urlsafe(24), **(client_claims or {}),
-        }, client_key, algorithm="RS256", headers={"kid": registered["kid"]})
+        }, client_key, algorithm="RS256", headers={"kid": registered["kid"], "typ": client_type})
         return {"grant_type": GRANT, "audience": TARGET, "scope": SCOPE,
                 "client_assertion_type": ASSERTION, "client_assertion": assertion,
                 "subject_token": subject, "subject_token_type": CANDIDATE["subject_token_type"]}
@@ -153,6 +154,47 @@ def test_bad_requests_and_client_consumption(profile, upstream_key):
                      "invalid_client")
 
     asyncio.run(check())
+
+
+def header_type(request):
+    return jwt.get_unverified_header(request["client_assertion"]).get("typ", "absent")
+
+
+def test_client_assertion_type(profile):
+    app, form = profile
+
+    async def check():
+        async with running(app()) as client:
+            # RFC 10070: accept the explicit type, and do not reject untyped assertions.
+            # RFC 7515: the type is a media type name, so case and "application/" do not matter.
+            for accepted, sent in (
+                (ASSERTION_TYPE, "client-authentication+jwt"), ("JWT", "JWT"), (None, "absent"),
+                ("jwt", "jwt"), ("application/jwt", "application/jwt"),
+                ("Application/Client-Authentication+JWT", "Application/Client-Authentication+JWT"),
+            ):
+                request = form(client_type=accepted)
+                assert header_type(request) == sent
+                assert (await client.post("/token", data=request)).status_code == 200
+            # An assertion that declares itself another kind of token is refused, and
+            # refusing it spends neither its identifier nor the subject token: the same
+            # identifier and subject token are accepted once the type is right.
+            for other in ("at+jwt", "dpop+jwt", "application/at+jwt", "client-authentication+jwt ",
+                          "JWT+client-authentication", "application/"):
+                identifier = secrets.token_urlsafe(24)
+                request = form(client_type=other, client_claims={"jti": identifier})
+                rejected(await client.post("/token", data=request), "invalid_client")
+                retry = form(request["subject_token"], client_claims={"jti": identifier})
+                assert (await client.post("/token", data=retry)).status_code == 200
+                rejected(await client.post("/token", data=retry), "invalid_client")
+
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize("value", [0, 1, True, False, ["JWT"], [], {"a": 1}, {}, ""])
+def test_assertion_type_must_be_a_known_string_or_absent(value):
+    from exchange import accepted_assertion_type
+    assert accepted_assertion_type(value) is False
+    assert accepted_assertion_type(None) is True
 
 
 def test_subject_claims_and_dependencies(profile, monkeypatch):
@@ -616,3 +658,35 @@ def test_dpop_exchange_token_authorizes_gateway_invocation(profile, local, monke
                 assert "dpop" not in calls[0].headers
 
     asyncio.run(check())
+
+
+def test_lab_exchange_probe_assertion_follows_rfc_10070(tmp_path, monkeypatch):
+    """The Bearer-mode probe marks its client assertion as RFC 10070 recommends."""
+    import httpx
+    import lab_exchange
+    from types import SimpleNamespace
+
+    client_dir, as_keys = tmp_path / "exchanger", tmp_path / "keys"
+    as_keys.mkdir(mode=0o700)
+    lab_exchange.provision(client_dir, as_keys)
+    sent = []
+
+    def authorization_server(request):
+        if request.method == "GET":
+            return httpx.Response(200, json={"keys": [{"kid": "synthetic"}]})
+        sent.append(dict(httpx.QueryParams(request.content.decode())))
+        return httpx.Response(400, json={"error": "stop_after_capture"})
+
+    monkeypatch.setattr(lab_exchange, "tls_client",
+                        lambda _: httpx.Client(transport=httpx.MockTransport(authorization_server)))
+    monkeypatch.setattr(lab_exchange, "login",
+                        lambda keycloak: setattr(keycloak, "subject_token", "subject-token"))
+    args = SimpleNamespace(client_dir=client_dir, keycloak_ca=None, as_ca=None, expected_subject="x")
+    with pytest.raises(httpx.HTTPStatusError):
+        lab_exchange.probe(args)
+    assert len(sent) == 1
+    assertion = sent[0]["client_assertion"]
+    assert jwt.get_unverified_header(assertion)["typ"] == ASSERTION_TYPE
+    claims = jwt.decode(assertion, options={"verify_signature": False})
+    assert claims["aud"] == ISSUER and claims["iss"] == claims["sub"] == CLIENT
+

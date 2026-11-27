@@ -19,7 +19,7 @@ the repository implements MCP yet.
 |---|---|
 | [OpenID Connect](docs/glossary.md#openid-connect-oidc) with [PKCE](docs/glossary.md#pkce-proof-key-for-code-exchange) ([RFC 7636](https://www.rfc-editor.org/rfc/rfc7636.html), [RFC 8252](https://www.rfc-editor.org/rfc/rfc8252.html)) | Browser sign-in against Keycloak |
 | [Token exchange](docs/glossary.md#token-exchange) ([RFC 8693](https://www.rfc-editor.org/rfc/rfc8693.html)) | Keycloak ID token → short-lived gateway access token |
-| [`private_key_jwt` client authentication](docs/glossary.md#client-assertion-private_key_jwt) ([RFC 7523](https://www.rfc-editor.org/rfc/rfc7523.html)) | Exchange client → authorization server |
+| [`private_key_jwt` client authentication](docs/glossary.md#client-assertion-private_key_jwt) ([RFC 7523](https://www.rfc-editor.org/rfc/rfc7523.html), as updated by [RFC 10070](https://www.rfc-editor.org/rfc/rfc10070.html)) | Exchange client → authorization server |
 | [JWT](docs/glossary.md#jwt-json-web-token) [access tokens](docs/glossary.md#access-token) ([RFC 9068](https://www.rfc-editor.org/rfc/rfc9068.html)) | Authorization server → gateway |
 | [DPoP](docs/glossary.md#dpop-demonstrating-proof-of-possession) with server [nonces](docs/glossary.md#nonce) ([RFC 9449](https://www.rfc-editor.org/rfc/rfc9449.html)) | Token binding at the authorization server and proof per request at the gateway |
 | Apple [Secure Enclave](docs/glossary.md#secure-enclave) | Hardware-held DPoP signing key |
