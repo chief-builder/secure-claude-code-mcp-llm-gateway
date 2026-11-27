@@ -16,7 +16,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from gateway import CLIENT, ISSUER, SCOPE, TARGET
 from dpop import encode, token_hash, thumbprint
 from exchange import ASSERTION, ASSERTION_TYPE, GRANT
-from foundation import CANDIDATE, public_jwk
+from foundation import CANDIDATE, MCP_RESOURCE, MCP_SCOPE, public_jwk
 from lab_exchange import ExchangeLogin, LoginError, login, tls_client
 
 GATEWAY = "https://127.0.0.1:8082/v1/messages"
@@ -50,7 +50,7 @@ class ProofClient:
         self.nonces[endpoint] = values[0]
 
 
-def exchange_token(args, subject, proof, *, signing_key=None):
+def exchange_token(args, subject, proof, *, signing_key=None, mcp=False):
     endpoint = ISSUER + "/token"
     key = signing_key
     if key is None:
@@ -67,8 +67,10 @@ def exchange_token(args, subject, proof, *, signing_key=None):
             headers = {"DPoP": proof.sign(endpoint)} if proof is not None else {}
             response = authority.post(endpoint, headers=headers, data={
                 "grant_type": GRANT, "subject_token": subject,
-                "subject_token_type": CANDIDATE["subject_token_type"], "audience": TARGET,
-                "scope": SCOPE, "client_assertion_type": ASSERTION, "client_assertion": assertion,
+                "subject_token_type": CANDIDATE["subject_token_type"],
+                **({"resource": MCP_RESOURCE, "scope": MCP_SCOPE} if mcp
+                   else {"audience": TARGET, "scope": SCOPE}),
+                "client_assertion_type": ASSERTION, "client_assertion": assertion,
             })
             if (proof is not None and attempt == 0 and response.status_code == 400
                     and response.json().get("error") == "use_dpop_nonce"):
@@ -82,10 +84,13 @@ def exchange_token(args, subject, proof, *, signing_key=None):
                 keys = authority.get(ISSUER + "/jwks").raise_for_status().json()["keys"]
                 header = jwt.get_unverified_header(token)
                 jwk, = [entry for entry in keys if entry["kid"] == header["kid"]]
-                claims = jwt.decode(token, jwt.PyJWK.from_dict(jwk).key,
-                                    algorithms=["RS256"], audience=TARGET, issuer=ISSUER)
-                if claims.get("cnf") != {"jkt": proof.jkt}:
-                    raise ValueError("Unexpected access token binding")
+                audience, scope = (MCP_RESOURCE, MCP_SCOPE) if mcp else (TARGET, SCOPE)
+                claims = jwt.decode(token, jwt.PyJWK.from_dict(jwk).key, algorithms=["RS256"],
+                                    audience=audience, issuer=ISSUER)
+                # The library accepts a list containing the audience; require it alone.
+                if (claims["aud"] != audience or claims.get("cnf") != {"jkt": proof.jkt}
+                        or claims.get("scope") != scope):
+                    raise ValueError("Unexpected access token audience, binding or scope")
             return token
 
 
@@ -110,6 +115,11 @@ def probe(args):
         login(keycloak)
     proof = ProofClient() if args.dpop else None
     token = exchange_token(args, keycloak.subject_token, proof)
+    mcp_token = None
+    if args.mcp:
+        # The same sign-in yields one token per target. Ask straight away: the
+        # authorization server accepts a sign-in token only while it is fresh.
+        mcp_token = exchange_token(args, keycloak.subject_token, proof, mcp=True)
     with tls_client(args.gateway_ca) as client:
         with invoke(client, token, REQUEST, proof) as response:
             result = response.read()
@@ -129,6 +139,18 @@ def probe(args):
         if not (found_text and completed):
             raise ValueError("Incomplete mock stream")
 
+        if mcp_token is not None:
+            # The model gateway must refuse a token issued for the MCP gateway. Check the
+            # token is still within its lifetime, so the refusal is not for expiry.
+            expiry = jwt.decode(mcp_token, options={"verify_signature": False})["exp"]
+            if expiry - time.time() < 30:
+                raise ValueError("MCP token too close to expiry to test the refusal")
+            refused = client.post(GATEWAY, json=REQUEST, headers={
+                "authorization": f"DPoP {mcp_token}", "DPoP": proof.sign(GATEWAY, mcp_token)})
+            if (refused.status_code != 401
+                    or refused.headers.get("www-authenticate") != 'DPoP error="invalid_token"'):
+                raise ValueError("Model gateway accepted an MCP token")
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -137,7 +159,11 @@ def main():
     parser.add_argument("--as-ca", required=True)
     parser.add_argument("--gateway-ca", required=True)
     parser.add_argument("--dpop", action="store_true")
+    parser.add_argument("--mcp", action="store_true",
+                        help="Also obtain an MCP token and check the model gateway refuses it")
     args = parser.parse_args()
+    if args.mcp and not args.dpop:
+        parser.error("--mcp requires --dpop")
     try:
         probe(args)
     except (httpx.HTTPError, jwt.PyJWTError, LoginError, OSError, ValueError, TypeError,
@@ -147,6 +173,8 @@ def main():
     except KeyboardInterrupt:
         return 130
     print("component_05_succeeded" if args.dpop else "component_04_succeeded")
+    if args.mcp:
+        print("mcp_token_succeeded")
     return 0
 
 

@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 import gateway
 from lab_invoke import GATEWAY, ProofClient
+from foundation import MCP_RESOURCE, MCP_SCOPE
 from lab_fixtures import MOCK_SECRET, Bytes, reply
 
 REQUEST = {"model": "lab", "messages": [{"role": "user", "content": "prompt-canary"}],
@@ -484,7 +485,50 @@ def test_lab_client_assertion_follows_rfc_10070(monkeypatch):
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     token = lab_invoke.exchange_token(SimpleNamespace(as_ca=None), "subject-token", None, signing_key=key)
     assert token == "synthetic" and len(sent) == 1
+    assert (sent[0]["audience"], sent[0]["scope"], "resource" in sent[0]) == (gateway.TARGET, gateway.SCOPE, False)
+    lab_invoke.exchange_token(SimpleNamespace(as_ca=None), "subject-token", None, signing_key=key, mcp=True)
+    assert (sent[1]["resource"], sent[1]["scope"], "audience" in sent[1]) == (MCP_RESOURCE, MCP_SCOPE, False)
     assertion = sent[0]["client_assertion"]
     assert jwt.get_unverified_header(assertion)["typ"] == "client-authentication+jwt"
     claims = jwt.decode(assertion, key.public_key(), algorithms=["RS256"], audience=gateway.ISSUER)
     assert claims["aud"] == gateway.ISSUER and claims["iss"] == claims["sub"] == gateway.CLIENT
+
+
+def test_model_gateway_refuses_a_token_issued_for_the_mcp_gateway(lab):
+    async def check(client):
+        for claims in ({"aud": MCP_RESOURCE, "scope": MCP_SCOPE}, {"aud": MCP_RESOURCE},
+                       {"aud": [gateway.TARGET, MCP_RESOURCE]}):
+            response = await client.post("/v1/messages", json=REQUEST,
+                                         headers={"authorization": f"Bearer {lab.token(**claims)}"})
+            assert response.status_code == 401
+            assert response.headers["www-authenticate"] == 'Bearer error="invalid_token"'
+        # The right audience with the MCP scope is authenticated but not permitted.
+        response = await client.post("/v1/messages", json=REQUEST,
+                                     headers={"authorization": f"Bearer {lab.token(scope=MCP_SCOPE)}"})
+        assert response.status_code == 403
+        assert not lab.mock_calls
+
+    lab.run(check)
+
+
+def test_dpop_model_gateway_refuses_a_token_issued_for_the_mcp_gateway(lab, tmp_path):
+    """The shape the authorization server really issues for MCP: bound to a key."""
+    setup_gateway_dpop(lab, tmp_path)
+    signer = ProofClient()
+    binding = {"cnf": {"jkt": signer.jkt}}
+
+    async def attempt(client, **claims):
+        token = lab.token(**binding, **claims)
+        return await client.post("/v1/messages", json=REQUEST,
+                                 headers=dpop_headers(token, signer.sign(GATEWAY, token)))
+
+    async def check(client):
+        for claims in ({"aud": MCP_RESOURCE, "scope": MCP_SCOPE}, {"aud": MCP_RESOURCE},
+                       {"aud": [gateway.TARGET, MCP_RESOURCE]}, {"aud": [gateway.TARGET]}):
+            response = await attempt(client, **claims)
+            assert response.status_code == 401
+            assert response.headers["www-authenticate"] == 'DPoP error="invalid_token"'
+        assert not lab.mock_calls
+
+    lab.run(check)
+

@@ -21,7 +21,7 @@ Target: not set · Theme: the MCP gateway's first stage, in the local lab
 | Task | Capability | Status | Artifacts |
 |------|------------|--------|-----------|
 | rfc-10070-assertion-type | Sign-in and token issuance | shipped | [workflow/releases/0.3.0/rfc-10070-assertion-type/](releases/0.3.0/rfc-10070-assertion-type/) |
-| mcp-tokens | MCP gateway | backlog | — |
+| mcp-tokens | MCP gateway | shipped | [workflow/releases/0.3.0/mcp-tokens/](releases/0.3.0/mcp-tokens/) |
 | mock-mcp-server | MCP gateway | backlog | — |
 | mcp-gateway | MCP gateway | backlog | — |
 | broker-mcp-endpoint | MCP gateway | backlog | — |
@@ -65,6 +65,7 @@ pruned without guilt.
 - Compare the token flow with MCP's Enterprise-Managed Authorization extension and decide whether to offer it alongside. It decides at the identity provider and takes two token requests where ours takes one; the IETF draft under it allows DPoP-bound grants and tokens, so it need not mean bearer tokens. Keycloak can accept such grants only experimentally and cannot issue them (MCP gateway, filed: 0.2.0)
 - Let an upstream MCP server ask the user for input mid-call (the specification's multi-round-trip requests) and long-lived change notifications; the first gateway version refuses both (MCP gateway, filed: 0.2.0)
 - Read the November 2026 AWS bill once it is final and record the figures against the estimate of about $0.04 for the live Bedrock run; at the same time identify the one key pair left in `us-east-1` and delete it if it belonged to the run (Gateway and inference, filed: 0.2.0)
+- Decide whether Bearer mode should remain for model tokens. Today it is what the authorization server and gateway run in when the DPoP options are left out, so the unprotected mode is the one you get by omission. Options: keep it as the lab's before-and-after comparison; require an explicit flag to run in Bearer mode, so nobody gets it by accident; or remove it. Raised by the owner on 2026-11-27; the second option is the assistant's recommendation (Sender-constrained access, filed: 0.3.0)
 - Sign the Secure Enclave helper and decide how it authorizes its caller (Sender-constrained access, filed: 0.1.0)
 
 ## Debt register

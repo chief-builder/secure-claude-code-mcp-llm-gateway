@@ -20,7 +20,8 @@ through a browser, and the application receives a signed ID token describing the
 
 A signed statement from the identity provider that a particular user
 signed in, for a particular application, at a particular time. Here it is the input
-to token exchange and is used once.
+to token exchange. It is accepted once for each kind of token the lab issues: once
+for a model token and once for an MCP token.
 
 ### PKCE (Proof Key for Code Exchange)
 
@@ -77,7 +78,8 @@ audience is somebody else.
 
 ### Scope
 
-What a token permits. The lab has one scope, `llm:invoke`.
+What a token permits. The lab has two scopes: `llm:invoke` for model calls and
+`mcp:invoke` for the MCP gateway. A token carries one of them.
 
 ### JWKS (JSON Web Key Set)
 

@@ -99,6 +99,13 @@ joined by dashes and share one name; decision records are
   tests as skipped, and say which checks were offline and which were live.
 - A change to an accepted protocol behavior is followed by a live lab run before the
   task closes, recorded in the task folder — offline tests alone do not re-prove it.
+- A task that adds or changes a security check shows that the check is really
+  tested: remove or weaken the check, confirm at least one test fails, restore the
+  file, and list in the task's record which checks were tried. A passing test proves
+  the code works, not that the test would notice if it did not.
+- A task that adds or changes a concept adds or updates a diagram for it under
+  `docs/concepts/`, written as Mermaid so it renders on GitHub — the owner wants the
+  ideas explained visually as they are built.
 - The `sketch` skill and the `swe-workflow-guide` mod are not installed — the project
   has no user interface. Ignore the references to them in `CLAUDE.md` and the skill.
 

@@ -105,5 +105,5 @@ Code: [`gateway/bedrock.py`](../../components/gateway/bedrock.py),
 | The session secret Claude Code holds | Only through the broker, on the same machine, until the session ends |
 | The gateway access token | No. Each request also needs a proof signed by the session key |
 | The token and one captured proof | No. The proof is single-use and tied to one nonce |
-| The ID token | Only with the exchange client's key as well, and only once, within a minute |
+| The ID token | Only with the exchange client's key as well, within a minute, and only for a kind of token it has not already been exchanged for: at most one model token and one MCP token |
 | The session key (software signer) | Yes, together with the token, for up to five minutes. The Secure Enclave signer prevents the key being copied |
