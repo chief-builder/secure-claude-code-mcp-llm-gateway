@@ -68,7 +68,7 @@ server's keys), `access_credential` (one credential only), `Verifier` from
 | 8 | Each security check broken in turn | A test fails for each; list in the outcome | **done** |
 | 9 | README, diagram page, glossary, root README, limitations | Documentation check; commands pasted into an interactive shell | **done** |
 | 10 | Live lab run with the owner signing in | Probe succeeds through the running services | **done** |
-| 11 | Verifier agent, then pull request | Acceptance criteria met | todo |
+| 11 | Verifier agent, then pull request | Acceptance criteria met | **done** (merge awaits the owner) |
 
 **Risks.**
 
