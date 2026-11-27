@@ -18,7 +18,8 @@ import mcp_gateway
 import mock_mcp
 from foundation import MCP_RESOURCE, MCP_SCOPE, public_jwk
 from lab_fixtures import Bytes, reply
-from lab_invoke import GATEWAY, ProofClient
+from lab_invoke import GATEWAY, ProofClient, mcp_probe
+from starlette.testclient import TestClient
 
 UPSTREAM_SECRET = "synthetic_tool_server_secret_canary"
 SUBJECT = "synthetic-gateway-subject-01"
@@ -553,3 +554,36 @@ def test_will_not_start_without_dpop_a_policy_or_a_credential(tmp_path, monkeypa
     with pytest.raises(SystemExit) as stopped:
         mcp_gateway.main()
     assert stopped.value.code == 1 and UPSTREAM_SECRET not in capsys.readouterr().err
+
+
+def tool_server(request):
+    sent = json.loads(request.content)
+    if sent["method"] == "tools/list":
+        return fake({"tools": [{"name": "lab_echo"}, {"name": "lab_add"}]})(request)
+    return fake({"content": [{"type": "text", "text": sent["params"]["arguments"]["text"]}]})(request)
+
+
+def test_the_lab_probe_passes_only_when_the_gateway_hides_the_right_tool(tmp_path):
+    for number, (tools, passes) in enumerate(((["lab_echo"], True), (["lab_echo", "lab_add"], False), ([], False))):
+        directory = tmp_path / str(number)
+        directory.mkdir()
+        lab = Lab(directory, {SUBJECT: frozenset(tools)})
+        lab.fake = tool_server
+        with TestClient(lab.app, base_url="https://127.0.0.1:8083") as client:
+            if passes:
+                mcp_probe(client, lab.token(), lab.signer)
+                assert [json.loads(request.content)["method"] for request in lab.sent] == ["tools/list", "tools/call"]
+            else:
+                with pytest.raises(ValueError):
+                    mcp_probe(client, lab.token(), lab.signer)
+
+
+def test_refuses_a_request_that_did_not_arrive_over_https(lab):
+    async def check(client):
+        assert (await lab.post(client, *rpc("server/discover"))).status_code == 200
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=lab.app),
+                                     base_url="http://127.0.0.1:8083") as plain:
+            refused = await lab.post(plain, *rpc("server/discover"))
+        assert refused.status_code == 401 and "invalid_dpop_proof" in refused.headers["www-authenticate"]
+
+    lab.run(check)

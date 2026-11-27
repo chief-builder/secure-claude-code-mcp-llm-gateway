@@ -20,6 +20,7 @@ from foundation import CANDIDATE, MCP_RESOURCE, MCP_SCOPE, public_jwk
 from lab_exchange import ExchangeLogin, LoginError, login, tls_client
 
 GATEWAY = "https://127.0.0.1:8082/v1/messages"
+MCP_VERSION = "2026-07-28"
 REQUEST = {"model": "synthetic-lab", "max_tokens": 32,
            "messages": [{"role": "user", "content": "Return the synthetic lab response."}]}
 
@@ -109,6 +110,41 @@ def invoke(client, token, payload, proof):
             return
 
 
+def mcp_call(client, token, proof, method, params=None, name=None):
+    """One MCP request, revision 2026-07-28, answering the gateway's first nonce challenge."""
+    body = {"jsonrpc": "2.0", "id": 1, "method": method, "params": {**(params or {}), "_meta": {
+        "io.modelcontextprotocol/protocolVersion": MCP_VERSION,
+        "io.modelcontextprotocol/clientCapabilities": {}}}}
+    for attempt in range(2):
+        headers = {"authorization": f"DPoP {token}", "DPoP": proof.sign(MCP_RESOURCE, token),
+                   "MCP-Protocol-Version": MCP_VERSION, "Mcp-Method": method,
+                   **({"Mcp-Name": name} if name else {})}
+        response = client.post(MCP_RESOURCE, json=body, headers=headers)
+        if (attempt == 0 and response.status_code == 401
+                and response.headers.get("www-authenticate", "").startswith('DPoP error="use_dpop_nonce"')):
+            proof.remember_nonce(MCP_RESOURCE, response)
+            continue
+        return response.raise_for_status().json()
+
+
+def mcp_probe(client, token, proof):
+    """The lab policy allows lab_echo and hides lab_add; check the gateway shows exactly that."""
+    discovered = mcp_call(client, token, proof, "server/discover")["result"]
+    if set(discovered["capabilities"]) != {"tools"}:
+        raise ValueError("MCP gateway offers more than tools")
+    listed = mcp_call(client, token, proof, "tools/list")["result"]
+    if [tool["name"] for tool in listed["tools"]] != ["lab_echo"] or listed["cacheScope"] != "private":
+        raise ValueError("Unexpected MCP tool list")
+    echoed = mcp_call(client, token, proof, "tools/call",
+                      {"name": "lab_echo", "arguments": {"text": "MCP_OK"}}, "lab_echo")
+    if echoed["result"]["content"] != [{"type": "text", "text": "MCP_OK"}]:
+        raise ValueError("Unexpected MCP tool result")
+    hidden = mcp_call(client, token, proof, "tools/call",
+                      {"name": "lab_add", "arguments": {"a": 1, "b": 2}}, "lab_add")
+    if hidden.get("error") != {"code": -32602, "message": "Unknown tool"}:
+        raise ValueError("MCP gateway did not refuse a hidden tool")
+
+
 def probe(args):
     with tls_client(args.keycloak_ca) as keycloak_client:
         keycloak = ExchangeLogin(keycloak_client)
@@ -150,6 +186,9 @@ def probe(args):
             if (refused.status_code != 401
                     or refused.headers.get("www-authenticate") != 'DPoP error="invalid_token"'):
                 raise ValueError("Model gateway accepted an MCP token")
+    if args.mcp_gateway_ca is not None:
+        with tls_client(args.mcp_gateway_ca) as client:
+            mcp_probe(client, mcp_token, proof)
 
 
 def main():
@@ -161,9 +200,13 @@ def main():
     parser.add_argument("--dpop", action="store_true")
     parser.add_argument("--mcp", action="store_true",
                         help="Also obtain an MCP token and check the model gateway refuses it")
+    parser.add_argument("--mcp-gateway-ca",
+                        help="Also use the MCP token at the MCP gateway; requires --mcp")
     args = parser.parse_args()
     if args.mcp and not args.dpop:
         parser.error("--mcp requires --dpop")
+    if args.mcp_gateway_ca is not None and not args.mcp:
+        parser.error("--mcp-gateway-ca requires --mcp")
     try:
         probe(args)
     except (httpx.HTTPError, jwt.PyJWTError, LoginError, OSError, ValueError, TypeError,
@@ -175,6 +218,8 @@ def main():
     print("component_05_succeeded" if args.dpop else "component_04_succeeded")
     if args.mcp:
         print("mcp_token_succeeded")
+    if args.mcp_gateway_ca is not None:
+        print("mcp_gateway_succeeded")
     return 0
 
 
