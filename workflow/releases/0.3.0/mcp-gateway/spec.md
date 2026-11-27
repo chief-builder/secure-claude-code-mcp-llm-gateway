@@ -1,7 +1,7 @@
 # Spec: mcp-gateway
 
 Consumes: [intent.md](intent.md)
-Status: draft
+Status: **approved** (2026-11-27)
 
 **Behavior.** A new service in `components/gateway`, `mcp_gateway.py`, run as its
 own process on `https://127.0.0.1:8083`, with one MCP endpoint, `POST /mcp`. It
@@ -157,4 +157,4 @@ unchanged. Dependencies: none new.
 3. The logging convention changes so the MCP gateway's audit log may carry the
    mapped user identity and an allowed tool's name.
 
-Awaiting approval of the spec as a whole.
+Approved as a whole on 2026-11-27.
