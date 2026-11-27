@@ -40,7 +40,11 @@ uv run python lab_invoke.py "$as_work/exchanger" \
   --gateway-ca "$gateway_work/tls/ca.pem" --dpop
 ```
 
-It prints `component_05_succeeded`. The probe completes each service's nonce
+It prints `component_05_succeeded`. Add `--mcp` to also obtain an MCP token from the
+same sign-in and check that this gateway refuses it; that needs the policy's
+`mcp_subjects` list (see the
+[authorization server README](../oauth-as/README.md#tokens-for-the-mcp-gateway)) and
+prints `mcp_token_succeeded` as well. The probe completes each service's nonce
 challenge, checks the issued token and its key binding, and makes one JSON and one
 streaming call with fresh proofs. The authorization server logs a nonce challenge
 and a successful exchange; the gateway logs a nonce challenge and two
@@ -99,7 +103,7 @@ Expect the CLI to print `MOCK_OK`, followed by
 uv run python -m pytest -q
 ```
 
-Expect 93 passed. All tests run offline. The Bedrock tests use injected SDK clients
+Expect 95 passed. All tests run offline. The Bedrock tests use injected SDK clients
 or the SDK's own stubber with synthetic credentials; they never resolve AWS
 credentials or call Bedrock.
 

@@ -21,7 +21,7 @@ from starlette.requests import ClientDisconnect
 
 from dpop import InvalidProof, NonceRequired
 from foundation import EXCHANGE_CANDIDATE as CANDIDATE
-from foundation import ISSUER, UPSTREAM, FoundationError, read_object
+from foundation import ISSUER, MCP_RESOURCE, MCP_SCOPE, UPSTREAM, FoundationError, read_object
 
 CLIENT = CANDIDATE["client_id"]
 SOURCE = CANDIDATE["source_audience"]
@@ -33,9 +33,10 @@ ASSERTION = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 # untyped ones. "JWT" is the generic type many libraries add by default.
 ASSERTION_TYPE = "client-authentication+jwt"
 ACCESS = "urn:ietf:params:oauth:token-type:access_token"
-REQUIRED = {"grant_type", "subject_token", "subject_token_type", "audience", "scope"}
+REQUIRED = {"grant_type", "subject_token", "subject_token_type", "scope"}
 AUTH_FIELDS = {"client_assertion", "client_assertion_type"}
-FIELDS = REQUIRED | AUTH_FIELDS | {"requested_token_type", "client_id"}
+FIELDS = REQUIRED | AUTH_FIELDS | {"audience", "resource", "requested_token_type", "client_id"}
+POLICY_FIELDS = {"exchange_enabled", "issuance_enabled", "candidate", "subjects"}
 HEADERS = {"Cache-Control": "no-store", "Pragma": "no-cache"}
 LOG = logging.getLogger("uvicorn.error")
 AS_REPLAY_DATABASE = "auth-server-token-exchange-replay.sqlite3"
@@ -169,16 +170,22 @@ class Exchange:
     def __init__(self, policy_path, key_dir, signing, jwk, registered, trust, verifier=None):
         policy = read_object(policy_path.read_bytes())
         subjects = policy.get("subjects")
-        if (set(policy) != {"exchange_enabled", "issuance_enabled", "candidate", "subjects"}
+        # Optional: the subjects that may also receive tokens for the MCP gateway.
+        mcp_subjects = policy.get("mcp_subjects", [])
+        if (not POLICY_FIELDS <= set(policy) or set(policy) - POLICY_FIELDS - {"mcp_subjects"}
                 or policy["exchange_enabled"] is not True or policy["issuance_enabled"] is not True
                 or policy["candidate"] != CANDIDATE or not isinstance(subjects, dict) or not subjects
                 or any(not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", source)
                        or not isinstance(target, str)
                        or not re.fullmatch(r"[A-Za-z0-9_-]{16,128}", target)
                        or target == source for source, target in subjects.items())
-                or len(set(subjects.values())) != len(subjects)):
+                or len(set(subjects.values())) != len(subjects)
+                or not isinstance(mcp_subjects, list)
+                or any(not isinstance(source, str) or source not in subjects for source in mcp_subjects)
+                or len(set(mcp_subjects)) != len(mcp_subjects)):
             raise FoundationError("Invalid enabled exchange policy")
         self.subjects = subjects
+        self.mcp_subjects = frozenset(mcp_subjects)
         self.signing = signing
         self.kid = jwk["kid"]
         self.client_keys = signing_keys(registered)
@@ -223,11 +230,17 @@ class Exchange:
         rejected = Rejected("invalid_request", "subject_rejected")
         if form.get("grant_type") not in (None, GRANT):
             raise Rejected("unsupported_grant_type", "grant_rejected")
-        if form.get("audience") not in (None, TARGET):
+        # A request names one target: the model gateway by `audience`, or the MCP gateway
+        # by `resource`. MCP tokens are issued only bound to a DPoP key.
+        mcp = "resource" in form
+        if (form.get("audience") not in (None, TARGET) or (mcp and "audience" in form)
+                or (mcp and (form["resource"] != MCP_RESOURCE or proof is None))):
             raise Rejected("invalid_target", "target_rejected")
-        if form.get("scope") != SCOPE:
+        audience, scope = (MCP_RESOURCE, MCP_SCOPE) if mcp else (TARGET, SCOPE)
+        if form.get("scope") != scope:
             raise Rejected("invalid_scope", "scope_rejected")
-        if (REQUIRED - form.keys() or form["subject_token_type"] != CANDIDATE["subject_token_type"]
+        if (REQUIRED - form.keys() or not (mcp or "audience" in form)
+                or form["subject_token_type"] != CANDIDATE["subject_token_type"]
                 or form.get("requested_token_type", ACCESS) != ACCESS):
             raise rejected
         try:
@@ -237,6 +250,8 @@ class Exchange:
                 raise FoundationError("Current upstream trust unavailable")
             verify(token, self.trust.keys[header["kid"]])
             subject = self.subjects[claims["sub"]]
+            if mcp and claims["sub"] not in self.mcp_subjects:
+                raise ValueError
             nonce = claims.get("nonce")
             if (claims.get("iss") != UPSTREAM or claims.get("aud") not in (SOURCE, [SOURCE])
                     or claims.get("azp", SOURCE) != SOURCE or claims.get("typ") != "ID"
@@ -254,20 +269,23 @@ class Exchange:
             expires = min(now + 300, claims["exp"])
             try:
                 token = jwt.encode({
-                    "iss": ISSUER, "aud": TARGET, "sub": subject, "client_id": CLIENT,
-                    "iat": now, "exp": expires, "jti": uuid.uuid4().hex, "scope": SCOPE,
+                    "iss": ISSUER, "aud": audience, "sub": subject, "client_id": CLIENT,
+                    "iat": now, "exp": expires, "jti": uuid.uuid4().hex, "scope": scope,
                     **({"cnf": {"jkt": proof.jkt}} if proof is not None else {}),
                 }, self.signing, algorithm="RS256", headers={"typ": "at+jwt", "kid": self.kid})
             except Exception:
                 raise FoundationError("Signing unavailable") from None
             return {"access_token": token, "issued_token_type": ACCESS, "token_type": "DPoP" if proof is not None else "Bearer",
-                    "expires_in": expires - now, "scope": SCOPE}
+                    "expires_in": expires - now, "scope": scope}
 
         additional = () if proof is None else (
             (digest("dpop-as", proof.jkt, proof.jti), proof.replay_until, InvalidProof()),
         )
+        # A sign-in token is accepted once per target. The model target keeps the record
+        # format it always had; the MCP target adds its audience to the record.
+        spent = digest("subject", UPSTREAM, SOURCE, nonce, *([MCP_RESOURCE] if mcp else []))
         return await run_in_threadpool(
-            self.store.reserve, digest("subject", UPSTREAM, SOURCE, nonce),
+            self.store.reserve, spent,
             min(claims["exp"], claims["iat"] + 60),
             Rejected("invalid_request", "subject_replay"), mint, additional=additional,
         )

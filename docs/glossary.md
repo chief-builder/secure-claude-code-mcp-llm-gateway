@@ -77,7 +77,8 @@ audience is somebody else.
 
 ### Scope
 
-What a token permits. The lab has one scope, `llm:invoke`.
+What a token permits. The lab has two scopes: `llm:invoke` for model calls and
+`mcp:invoke` for the MCP gateway. A token carries one of them.
 
 ### JWKS (JSON Web Key Set)
 

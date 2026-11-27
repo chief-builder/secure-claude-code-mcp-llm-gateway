@@ -1,7 +1,7 @@
 # Spec: mcp-tokens
 
 Consumes: [intent.md](intent.md)
-Status: draft
+Status: **approved** (2026-11-26)
 
 **Behavior.**
 
@@ -59,7 +59,9 @@ a gateway test, the authorization server README and the glossary.
   to sign for the MCP gateway.
 
 **Other requirements.** Security: every new refusal must look exactly like the
-existing refusals of its kind, and must use up nothing.
+existing refusals of its kind, and must leave the sign-in token unused. (Corrected
+during the build: the client assertion is used up by every authenticated request,
+refused or not, as it is today. The first wording, "use up nothing", was wrong.)
 
 **Acceptance criteria.**
 
@@ -69,7 +71,7 @@ existing refusals of its kind, and must use up nothing.
       matches the proof key.
 - [ ] The same ID token yields one model token and one MCP token, in either order;
       a second request for either target is refused as a replay.
-- [ ] Refused, each using up nothing: both `audience` and `resource`; neither; an
+- [ ] Refused, each leaving the sign-in token unused: both `audience` and `resource`; neither; an
       unknown `resource`; `mcp:invoke` with the model audience; `llm:invoke` with
       the MCP resource; a subject not in `mcp_subjects`; a policy with no
       `mcp_subjects`; and any MCP request in Bearer mode.
@@ -82,13 +84,7 @@ existing refusals of its kind, and must use up nothing.
       before, and the probe's new step obtains an MCP token from the same sign-in
       and sees the LLM gateway refuse it.
 
-**Open questions.**
-
-1. Exchanging one ID token once per target widens what a stolen, still-fresh ID
-   token allows: today it is useless once exchanged; afterwards it could be
-   exchanged once more, for whichever target has not been used. The thief would
-   still need the exchange client's key, and the token would be bound to the
-   thief's own DPoP key. The alternative is a separate sign-in for each token.
-   Recommended: once per target.
-2. Should MCP tokens need an explicit list in the policy, or should every subject
-   in the policy get them? Recommended: an explicit list, empty by default.
+**Open questions.** None. Decided at approval on 2026-11-26: a sign-in token may be
+exchanged once per target; MCP tokens need an explicit `mcp_subjects` list in the
+policy; and the three details (DPoP only, the gateway address as audience, the scope
+name `mcp:invoke`) stand as written.

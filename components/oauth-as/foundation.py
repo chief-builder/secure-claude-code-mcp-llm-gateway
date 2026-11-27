@@ -28,6 +28,10 @@ CANDIDATE = {
     "target": "urn:lab:llm-gateway",
     "scope": "llm:invoke",
 }
+# The MCP gateway is a second target for issued tokens. The MCP specification names a
+# server by its address, so its audience is the gateway's MCP endpoint.
+MCP_RESOURCE = "https://127.0.0.1:8083/mcp"
+MCP_SCOPE = "mcp:invoke"
 EXCHANGE_CLIENT_JWKS = "exchange-client-jwks.json"
 EXCHANGE_CANDIDATE = {**CANDIDATE, "client_jwks": EXCHANGE_CLIENT_JWKS}
 POLICY = {"exchange_enabled": False, "issuance_enabled": False, "candidate": CANDIDATE}

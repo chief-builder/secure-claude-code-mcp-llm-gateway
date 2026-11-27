@@ -74,13 +74,30 @@ command. The server then requires a DPoP proof and issues tokens bound to the
 caller's key. This is the form the quickstart uses; exercise it with the gateway's
 [DPoP probe](../gateway/README.md#dpop-profile).
 
+### Tokens for the MCP gateway
+
+The server can issue a second kind of token, for the MCP gateway, so that a token
+for model calls cannot be used for tools and the reverse. It does so only when
+running with DPoP, and only for subjects the policy lists. Add the list to the
+policy file next to `subjects`:
+
+```json
+"mcp_subjects": ["9ae7b8d8-cb6a-49f3-924c-2d73c8bd5b95"]
+```
+
+A policy without the list issues no MCP tokens. A request asks for one with
+`resource=https://127.0.0.1:8083/mcp` and `scope=mcp:invoke` in place of `audience`
+and `scope=llm:invoke`. One sign-in can be exchanged once for each kind. The
+gateway's DPoP probe exercises this when run with `--mcp`; see the
+[gateway README](../gateway/README.md#dpop-profile).
+
 ## Test it
 
 ```sh
 uv run python -m pytest -q
 ```
 
-Expect 55 passed. All tests run offline. A change here can break the gateway and
+Expect 88 passed. All tests run offline. A change here can break the gateway and
 broker, which import from this directory, so run their suites too.
 
 ## How it works
@@ -108,12 +125,15 @@ accepted against empty state.
 
 ## Limits
 
-- One exchange client, one audience (`urn:lab:llm-gateway`) and one scope
-  (`llm:invoke`), all fixed in code.
+- One exchange client and two fixed targets: the model gateway
+  (`urn:lab:llm-gateway`, scope `llm:invoke`) and the MCP gateway
+  (`https://127.0.0.1:8083/mcp`, scope `mcp:invoke`). All are fixed in code.
 - The exchange client's private key is a file on the same machine. In production
   that authority belongs at a separate service boundary.
-- An ID token is a bearer credential for the minute it is accepted. One-time use
-  stops a second exchange, not the first.
+- An ID token is a bearer credential for the minute it is accepted. It can be
+  exchanged once per target, so a stolen one that was already used for a model
+  token could still be exchanged once for an MCP token by someone holding the
+  exchange client's key.
 - No refresh tokens. Access tokens last at most five minutes.
 - The server accepts a client assertion typed `client-authentication+jwt`, typed
   `JWT`, or untyped, and rejects any other declared type. The type is compared as

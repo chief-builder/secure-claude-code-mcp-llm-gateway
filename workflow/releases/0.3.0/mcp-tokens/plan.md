@@ -1,7 +1,7 @@
 # Plan: mcp-tokens
 
 Consumes: [spec.md](spec.md)
-Status: draft — needs the owner's approval, because it changes token issuance
+Status: **approved** (2026-11-26)
 
 **Design summary.** A target is a small record: the audience written into the
 token, the scope it requires, how a request names it (`audience` or `resource`),
@@ -22,12 +22,12 @@ for arbitrary audiences).
 
 | # | Unit | Check | Status |
 |---|------|-------|--------|
-| 1 | Constants and the policy's optional `mcp_subjects`, validated at startup | Old policy files load unchanged; malformed lists refused; tests | todo |
-| 2 | Target resolution in the token request: `audience` or `resource`, scope matched to target, MCP only with DPoP | Every refusal in the spec tested, each shown to use up nothing | todo |
-| 3 | Issue the MCP token; replay key per target | One ID token gives one of each, in either order; third use refused | todo |
-| 4 | Gateway test: the LLM gateway refuses an MCP token | 401 in the gateway suite | todo |
-| 5 | `lab_invoke.py`: exchange for either target; optional probe step | Offline test decodes what it sends; suites pass | todo |
-| 6 | README and glossary | Documentation check passes | todo |
+| 1 | Constants and the policy's optional `mcp_subjects`, validated at startup | Old policy files load unchanged; malformed lists refused; tests | **done** |
+| 2 | Target resolution in the token request: `audience` or `resource`, scope matched to target, MCP only with DPoP | Every refusal in the spec tested, each shown to use up nothing | **done** |
+| 3 | Issue the MCP token; replay key per target | One ID token gives one of each, in either order; third use refused | **done** |
+| 4 | Gateway test: the LLM gateway refuses an MCP token | 401 in the gateway suite | **done** |
+| 5 | `lab_invoke.py`: exchange for either target; optional probe step | Offline test decodes what it sends; suites pass | **done** |
+| 6 | README and glossary | Documentation check passes | **done** |
 | 7 | Live lab run from a fresh clone, with a policy that lists the subject | Broker and probe as before; MCP step succeeds | todo |
 | 8 | Verifier agent, then land | Acceptance criteria met | todo |
 

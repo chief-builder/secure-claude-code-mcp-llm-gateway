@@ -14,7 +14,7 @@ from app import create_app
 from dpop import Verifier, encode, thumbprint
 from exchange import ACCESS, ASSERTION, ASSERTION_TYPE, CLIENT, GRANT, SCOPE, TARGET
 from foundation import EXCHANGE_CANDIDATE as CANDIDATE
-from foundation import ISSUER, UPSTREAM, public_jwk
+from foundation import ISSUER, MCP_RESOURCE, MCP_SCOPE, UPSTREAM, FoundationError, public_jwk
 from test_foundation import issuer_transport, reply, running
 
 SUBJECT = "synthetic-employee-id"
@@ -689,4 +689,155 @@ def test_lab_exchange_probe_assertion_follows_rfc_10070(tmp_path, monkeypatch):
     assert jwt.get_unverified_header(assertion)["typ"] == ASSERTION_TYPE
     claims = jwt.decode(assertion, options={"verify_signature": False})
     assert claims["aud"] == ISSUER and claims["iss"] == claims["sub"] == CLIENT
+
+
+def allow_mcp(local, listed=(SUBJECT,), **extra):
+    """Rewrite the enabled policy so the listed subjects may receive MCP tokens."""
+    local[1].write_text(json.dumps({
+        "exchange_enabled": True, "issuance_enabled": True, "candidate": CANDIDATE,
+        "subjects": {SUBJECT: MAPPED}, "mcp_subjects": list(listed), **extra,
+    }))
+
+
+def for_mcp(request, **changes):
+    request = {key: value for key, value in request.items() if key != "audience"}
+    request.update(resource=MCP_RESOURCE, scope=MCP_SCOPE)
+    for key, value in changes.items():
+        if value is None:
+            request.pop(key, None)
+        else:
+            request[key] = value
+    return request
+
+
+def dpop_session(local):
+    path, verifier, key, public = setup_dpop(local[0])
+    nonce = verifier.new_nonce(thumbprint(public), int(time.time()))
+    return path, public, lambda: {"DPoP": sign_proof(key, public, nonce=nonce)}
+
+
+def test_one_sign_in_yields_one_token_per_target(profile, local):
+    app, form = profile
+    allow_mcp(local)
+    path, public, proof = dpop_session(local)
+
+    async def check():
+        async with running(app(dpop_nonce_key=path)) as client:
+            verification_key = jwt.PyJWK.from_dict((await client.get("/jwks")).json()["keys"][0]).key
+            for mcp_first in (True, False):
+                subject = form()["subject_token"]
+                order = [True, False] if mcp_first else [False, True]
+                for mcp in order:
+                    request = for_mcp(form(subject)) if mcp else form(subject)
+                    response = await client.post("/token", data=request, headers=proof())
+                    assert response.status_code == 200
+                    body = response.json()
+                    audience, scope = (MCP_RESOURCE, MCP_SCOPE) if mcp else (TARGET, SCOPE)
+                    assert (body["token_type"], body["scope"]) == ("DPoP", scope)
+                    claims = jwt.decode(body["access_token"], verification_key, algorithms=["RS256"],
+                                        issuer=ISSUER, audience=audience)
+                    assert set(claims) == {"iss", "sub", "aud", "iat", "exp", "scope", "jti", "client_id", "cnf"}
+                    assert (claims["aud"], claims["scope"], claims["sub"], claims["client_id"]) == (
+                        audience, scope, MAPPED, CLIENT)
+                    assert claims["cnf"] == {"jkt": thumbprint(public)}
+                    assert 0 < claims["exp"] - claims["iat"] <= 300
+                # Each target accepts the sign-in token once.
+                for mcp in (True, False):
+                    request = for_mcp(form(subject)) if mcp else form(subject)
+                    rejected(await client.post("/token", data=request, headers=proof()))
+
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize(("changes", "code"), [
+    ({"audience": TARGET}, "invalid_target"),
+    ({"resource": "https://127.0.0.1:8083/other"}, "invalid_target"),
+    ({"resource": MCP_RESOURCE + "/"}, "invalid_target"),
+    ({"resource": TARGET}, "invalid_target"),
+    ({"resource": ""}, "invalid_target"),
+    ({"scope": SCOPE}, "invalid_scope"),
+    ({"scope": MCP_SCOPE + " " + SCOPE}, "invalid_scope"),
+    ({"scope": None}, "invalid_scope"),
+    ({"resource": None, "scope": SCOPE}, "invalid_request"),
+])
+def test_mcp_request_refusals_leave_the_sign_in_token_unused(profile, local, changes, code):
+    app, form = profile
+    allow_mcp(local)
+    path, _, proof = dpop_session(local)
+
+    async def check():
+        async with running(app(dpop_nonce_key=path)) as client:
+            subject = form()["subject_token"]
+            rejected(await client.post("/token", data=for_mcp(form(subject), **changes), headers=proof()), code)
+            # A model request asking for the MCP scope is refused the same way.
+            rejected(await client.post("/token", data={**form(subject), "scope": MCP_SCOPE}, headers=proof()),
+                     "invalid_scope")
+            for request in (for_mcp(form(subject)), form(subject)):
+                assert (await client.post("/token", data=request, headers=proof())).status_code == 200
+
+    asyncio.run(check())
+
+
+@pytest.mark.parametrize("listed", [(), None])
+def test_mcp_token_needs_the_subject_listed(profile, local, listed):
+    app, form = profile
+    if listed is not None:
+        allow_mcp(local, listed)
+    path, _, proof = dpop_session(local)
+
+    async def check():
+        async with running(app(dpop_nonce_key=path)) as client:
+            subject = form()["subject_token"]
+            # Refused exactly as an unknown subject is, and the model token is unaffected.
+            rejected(await client.post("/token", data=for_mcp(form(subject)), headers=proof()))
+            unknown = for_mcp(form(source_claims={"sub": "unknown"}))
+            rejected(await client.post("/token", data=unknown, headers=proof()))
+            assert (await client.post("/token", data=form(subject), headers=proof())).status_code == 200
+
+    asyncio.run(check())
+
+
+def test_mcp_token_is_never_issued_without_dpop(profile, local, caplog):
+    app, form = profile
+    allow_mcp(local)
+    caplog.set_level(logging.INFO, logger="uvicorn.error")
+
+    async def check():
+        async with running(app()) as client:
+            subject = form()["subject_token"]
+            rejected(await client.post("/token", data=for_mcp(form(subject))), "invalid_target")
+            assert (await client.post("/token", data=form(subject))).status_code == 200
+
+    asyncio.run(check())
+    assert "event=target_rejected" in caplog.text
+
+
+@pytest.mark.parametrize("value", [
+    ["unknown-subject"], [SUBJECT, SUBJECT], SUBJECT, {SUBJECT: True}, [1], [None], None, True,
+])
+def test_policy_with_malformed_mcp_subjects_is_refused_at_startup(profile, local, value):
+    app, _ = profile
+    local[1].write_text(json.dumps({
+        "exchange_enabled": True, "issuance_enabled": True, "candidate": CANDIDATE,
+        "subjects": {SUBJECT: MAPPED}, "mcp_subjects": value,
+    }))
+
+    async def start():
+        async with running(app()):
+            pass
+
+    with pytest.raises(FoundationError):
+        asyncio.run(start())
+
+
+def test_policy_rejects_unknown_fields_alongside_mcp_subjects(profile, local):
+    app, _ = profile
+    allow_mcp(local, other=True)
+
+    async def start():
+        async with running(app()):
+            pass
+
+    with pytest.raises(FoundationError):
+        asyncio.run(start())
 
