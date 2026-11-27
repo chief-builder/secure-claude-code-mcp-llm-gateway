@@ -137,7 +137,7 @@ def access_credential(request, scheme):
     return match[1]
 
 
-async def validate_access_token(token, trust, scheme):
+async def validate_access_token(token, trust, scheme, audience=TARGET):
     invalid = Failure(401, "authentication_failed", f'{scheme} error="invalid_token"')
     try:
         header, claims = token_parts(token)
@@ -149,7 +149,7 @@ async def validate_access_token(token, trust, scheme):
         verify(token, key)
         issued, expiry = claims.get("iat"), claims.get("exp")
         now = time.time()
-        if (claims.get("iss") != ISSUER or claims.get("aud") != TARGET
+        if (claims.get("iss") != ISSUER or claims.get("aud") != audience
                 or not all(isinstance(claims.get(name), str) and claims[name].strip()
                            for name in ("sub", "jti"))
                 or type(issued) is not int or type(expiry) is not int
@@ -167,11 +167,11 @@ async def validate_access_token(token, trust, scheme):
     return claims
 
 
-def enforce_policy(claims, scheme):
+def enforce_policy(claims, scheme, scope=SCOPE):
     if claims.get("client_id") != CLIENT:
         raise Failure(403, "policy_denied")
-    if claims.get("scope") != SCOPE:
-        raise Failure(403, "policy_denied", f'{scheme} error="insufficient_scope", scope="llm:invoke"')
+    if claims.get("scope") != scope:
+        raise Failure(403, "policy_denied", f'{scheme} error="insufficient_scope", scope="{scope}"')
 
 
 def proof_failure():
