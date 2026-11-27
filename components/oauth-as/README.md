@@ -113,6 +113,8 @@ broker, which import from this directory, so run their suites too.
 - [`dpop.py`](dpop.py) — DPoP proof validation and stateless nonces.
 - [Authorization server walkthrough](../../docs/concepts/authorization-server-walkthrough.md)
   follows one exchange through the code.
+- [Tokens and modes](../../docs/concepts/tokens-and-modes.md) shows Bearer mode
+  against DPoP mode, and the two kinds of token, in diagrams.
 - Design specs: [Component 2](../../docs/component-02/design-spec.md),
   [Component 3](../../docs/component-03/design-spec.md),
   [Component 5](../../docs/component-05/design-spec.md).

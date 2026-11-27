@@ -92,6 +92,8 @@ part on its own. Keys, certificates and replay databases are created under
 - [Quickstart](docs/quickstart.md) — run the lab.
 - [One request, end to end](docs/concepts/request-walkthrough.md) — how the parts
   fit together.
+- [Tokens and modes](docs/concepts/tokens-and-modes.md) — Bearer against DPoP, and the
+  two kinds of token, in diagrams.
 - [Glossary](docs/glossary.md) — every term, in plain language.
 - [Documentation index](docs/README.md) — all explanations and verification records.
 - [Changelog](CHANGELOG.md) — what each release contains.
