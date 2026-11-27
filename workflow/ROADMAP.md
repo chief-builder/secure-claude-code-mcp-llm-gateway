@@ -76,4 +76,5 @@ conversation alongside features.
 
 - Strict JSON parsing is duplicated in `oauth-lab/oidc.py` and `oauth-as/foundation.py`; a fix to one can miss the other (filed: 0.1.0)
 - The Bedrock request is validated twice, once in the gateway and once in the adapter transport (filed: 0.1.0)
+- The MCP gateway imports its token, proof and replay checks from `gateway/gateway.py`, a file named after the other gateway. A neutral shared module would be tidier but means rearranging accepted security code with no change in behavior (filed: 0.3.0)
 - The mock LLM's tests use a Starlette test client that warns when it falls back to `httpx`. The warning is hidden, not fixed: the MCP SDK brings `httpx2`, which the test client prefers, so those tests now run on `httpx2` and the warning returns if the SDK is ever removed (filed: 0.1.0, updated: 0.3.0)

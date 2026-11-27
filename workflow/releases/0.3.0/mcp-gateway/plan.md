@@ -1,7 +1,7 @@
 # Plan: mcp-gateway
 
 Consumes: [spec.md](spec.md)
-Status: draft — needs the owner's approval, because it changes token validation
+Status: **approved** (2026-11-27)
 
 **Design summary.** A new module, `components/gateway/mcp_gateway.py`, holds the
 MCP gateway. It imports the LLM gateway's existing security functions and does not
