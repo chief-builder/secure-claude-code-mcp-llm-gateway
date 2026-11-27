@@ -374,9 +374,19 @@ def fake(result=None, **overrides):
     return respond
 
 
+GOOD = {"jsonrpc": "2.0", "id": 1, "result": {"resultType": "complete", "content": [], "isError": False}}
+
+
 def stream(request):
-    return httpx.Response(200, stream=Bytes(b"event: message\ndata: {}\n\n"),
+    # A reply that would be acceptable as JSON, sent as a stream.
+    return httpx.Response(200, stream=Bytes(json.dumps(GOOD).encode()),
                           headers={"content-type": "text/event-stream"})
+
+
+def oversized(request):
+    # A well-formed reply that is only too large.
+    padded = {**GOOD, "result": {**GOOD["result"], "content": [{"type": "text", "text": "x" * mcp_gateway.REPLY_LIMIT}]}}
+    return httpx.Response(200, stream=Bytes(json.dumps(padded).encode()), headers={"content-type": "application/json"})
 
 
 @pytest.mark.parametrize(("respond", "status"), [
@@ -394,8 +404,7 @@ def stream(request):
     (lambda request: httpx.Response(500, json={}), 502),
     (lambda request: httpx.Response(200, stream=Bytes(b"{not json"), headers={"content-type": "application/json"}), 502),
     (lambda request: httpx.Response(200, stream=Bytes(b"[]"), headers={"content-type": "application/json"}), 502),
-    (lambda request: httpx.Response(200, stream=Bytes(b"x" * (mcp_gateway.REPLY_LIMIT + 1)),
-                                    headers={"content-type": "application/json"}), 502),
+    (oversized, 502),
     (lambda request: httpx.Response(200, json={}, headers={"content-encoding": "gzip"}), 502),
     (lambda request: (_ for _ in ()).throw(httpx.ConnectError("refused")), 502),
     (lambda request: (_ for _ in ()).throw(httpx.ReadTimeout("slow")), 504),
