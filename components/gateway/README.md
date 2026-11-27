@@ -1,5 +1,8 @@
 # LLM gateway
 
+This folder also holds the [MCP gateway](README-mcp.md), a separate service with its
+own README.
+
 ## What it is
 
 The service in front of the model, at `https://127.0.0.1:8082`. It accepts Anthropic
@@ -103,7 +106,8 @@ Expect the CLI to print `MOCK_OK`, followed by
 uv run python -m pytest -q
 ```
 
-Expect 96 passed. All tests run offline. The Bedrock tests use injected SDK clients
+Expect 149 passed: 97 for the LLM gateway and 52 for the MCP gateway. All tests run
+offline. The Bedrock tests use injected SDK clients
 or the SDK's own stubber with synthetic credentials; they never resolve AWS
 credentials or call Bedrock.
 

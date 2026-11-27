@@ -10,8 +10,9 @@ client's private key, and AWS credentials never reach the developer laptop.
 > for that lab only. Read [Known limitations](#known-limitations) before
 > borrowing any part of it.
 
-MCP is in the project name because MCP gateway support is planned. Nothing in
-the repository implements MCP yet.
+The MCP side is being built. An [MCP gateway](components/gateway/README-mcp.md)
+checks DPoP-bound tokens and applies per-tool rules in front of a mock tool server,
+and is exercised by a test client. Claude Code is not yet connected to it.
 
 ## What it demonstrates
 
@@ -75,7 +76,8 @@ The terms in the diagram are defined in the glossary:
 | 6 | macOS credential broker | [`components/broker`](components/broker) | [docs](docs/component-06) |
 | 7 | Secure Enclave key custody | [`components/broker/native`](components/broker/native) | [docs](docs/component-07) |
 | 8 | Bedrock integration | [`gateway/bedrock.py`](components/gateway/bedrock.py) | [docs](docs/component-08) |
-| — | Mock MCP tool server, for the MCP gateway now being built | [`components/mock-mcp`](components/mock-mcp) | [decision](workflow/decisions/0004-mock-mcp-server-uses-the-official-sdk.md) |
+| — | Mock MCP tool server | [`components/mock-mcp`](components/mock-mcp) | [decision](workflow/decisions/0004-mock-mcp-server-uses-the-official-sdk.md) |
+| — | MCP gateway: DPoP-bound MCP tokens and per-tool rules | [`gateway/mcp_gateway.py`](components/gateway/README-mcp.md) | [decision](workflow/decisions/0003-mcp-through-the-broker-with-its-own-tokens.md) |
 
 ## Running the lab
 
@@ -157,11 +159,14 @@ and a secret scan.
 - **Matched stop sequences are untested against live Bedrock.** The adapter
   asks Converse for the matched sequence and returns it, but only offline
   tests cover this.
+- **MCP is not connected to Claude Code yet.** The MCP gateway is reached only by
+  the lab's test client, offers tools only from one mock tool server, and cannot
+  be used by an ordinary MCP client, which has no DPoP key.
 - **No mutual TLS.** The live Bedrock run reached the gateway through SSH
   forwarding with server-verified HTTPS inside it.
 - **Addresses and ports are fixed** to loopback: 8080 (Keycloak), 8081
-  (authorization server), 8082 (gateway), 8765 (mock) and 8766 (sign-in
-  callback).
+  (authorization server), 8082 (gateway), 8083 (MCP gateway), 8765 (mock),
+  8766 (sign-in callback) and 8767 (mock tool server).
 
 Checks that were planned but not completed:
 

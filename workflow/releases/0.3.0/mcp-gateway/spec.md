@@ -126,8 +126,10 @@ unchanged. Dependencies: none new.
       token bound to a different key; a missing, replayed or stale-nonce proof; a
       proof made for the LLM gateway's address; a Bearer credential; two
       credentials.
-- [ ] Refused with the header-mismatch error: a missing or older
-      `MCP-Protocol-Version` header, a version that differs from the body, an
+- [ ] Refused with the header-mismatch error (corrected during the build: an
+      older revision named consistently in header and body is refused with the
+      unsupported-version error, as the MCP specification defines): a missing or
+      older `MCP-Protocol-Version` header, a version that differs from the body, an
       `Mcp-Method` or `Mcp-Name` that is missing or differs from the body. In
       particular, headers naming an allowed tool over a body calling another tool
       are refused and nothing is forwarded.
