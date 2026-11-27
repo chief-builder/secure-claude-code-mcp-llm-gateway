@@ -58,16 +58,16 @@ server's keys), `access_credential` (one credential only), `Verifier` from
 
 | # | Unit | Check | Status |
 |---|------|-------|--------|
-| 1 | The two parameters in `gateway.py` | LLM gateway suite passes unmodified; new tests show a wrong audience and a wrong scope are refused when passed in | todo |
-| 2 | Policy loading, startup rules, metadata route | Tests for good and malformed policies, missing DPoP options, the metadata document | todo |
-| 3 | Steps 1 to 5 and 7: credential, token, proof, client and scope, replay | Tests for every refusal in the spec's third criterion | todo |
-| 4 | Step 6 and `server/discover`: request parsing and header checks | Tests for the fourth and fifth criteria | todo |
-| 5 | `tools/list` and `tools/call`: rules, forwarding, reply checks, disconnect | Tests against the SDK mock and the fakes | todo |
-| 6 | Audit log, and the convention change in `workflow/PROJECT.md` | Tests read the log lines | todo |
-| 7 | The probe | Offline test of its request building | todo |
-| 8 | Each security check broken in turn | A test fails for each; list in the outcome | todo |
-| 9 | README, diagram page, glossary, root README, limitations | Documentation check; commands pasted into an interactive shell | todo |
-| 10 | Live lab run with the owner signing in | Probe succeeds through the running services | todo |
+| 1 | The two parameters in `gateway.py` | LLM gateway suite passes unmodified; new tests show a wrong audience and a wrong scope are refused when passed in | **done** |
+| 2 | Policy loading, startup rules, metadata route | Tests for good and malformed policies, missing DPoP options, the metadata document | **done** |
+| 3 | Steps 1 to 5 and 7: credential, token, proof, client and scope, replay | Tests for every refusal in the spec's third criterion | **done** |
+| 4 | Step 6 and `server/discover`: request parsing and header checks | Tests for the fourth and fifth criteria | **done** |
+| 5 | `tools/list` and `tools/call`: rules, forwarding, reply checks, disconnect | Tests against the SDK mock and the fakes | **done** |
+| 6 | Audit log, and the convention change in `workflow/PROJECT.md` | Tests read the log lines | **done** |
+| 7 | The probe | Offline test of its request building | **done** |
+| 8 | Each security check broken in turn | A test fails for each; list in the outcome | **done** |
+| 9 | README, diagram page, glossary, root README, limitations | Documentation check; commands pasted into an interactive shell | **done** |
+| 10 | Live lab run with the owner signing in | Probe succeeds through the running services | **done** |
 | 11 | Verifier agent, then pull request | Acceptance criteria met | todo |
 
 **Risks.**
