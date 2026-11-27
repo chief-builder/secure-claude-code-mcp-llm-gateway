@@ -49,7 +49,7 @@ cannot be replayed and tool-server credentials that never reach the laptop.
 Decision: [MCP through the broker, with its own tokens and per-tool rules](decisions/0003-mcp-through-the-broker-with-its-own-tokens.md).
 
 - Tokens for MCP with their own audience and scope, from the existing token exchange — done
-- A mock MCP server with harmless tools — planned
+- A mock MCP server with harmless tools — done
 - MCP gateway: token, DPoP proof and replay checks, then per-tool rules — planned
 - Broker as the local MCP endpoint for Claude Code — planned
 - Claude Code really calling a tool, driven by a scripted mock model — planned

@@ -13,6 +13,7 @@ Explanations of the system as it is now.
 | [Glossary](glossary.md) | Every protocol and project term, in plain language |
 | [One request, end to end](concepts/request-walkthrough.md) | A single prompt from sign-in to the model's reply |
 | [Tokens and modes](concepts/tokens-and-modes.md) | Bearer mode against DPoP mode, and the two kinds of token, in diagrams |
+| [The shape of an MCP request](concepts/mcp-request.md) | What Claude Code sends to a tool server, and why each request says the same facts twice, in diagrams |
 | [Authorization server walkthrough](concepts/authorization-server-walkthrough.md) | How a DPoP-bound token is issued, step by step through the code |
 | [Gateway walkthrough](concepts/gateway-walkthrough.md) | How a DPoP request is verified, step by step through the code |
 

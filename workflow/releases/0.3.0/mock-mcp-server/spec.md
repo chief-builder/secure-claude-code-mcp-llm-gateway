@@ -1,7 +1,7 @@
 # Spec: mock-mcp-server
 
 Consumes: [intent.md](intent.md)
-Status: draft (revised 2026-11-27 after the owner chose the official SDK)
+Status: **approved** (2026-11-27)
 
 **How it is built.** With the official MCP Python SDK, pinned at version 2.3.0, and
 not by hand. The owner chose this, and the assistant agreed after testing it. The
@@ -97,5 +97,4 @@ unaffected by their presence.
 - [ ] A diagram page explains the shape of an MCP request and is linked from the
       documentation index.
 
-**Open questions.** None on how to build it. Awaiting approval of the spec as a
-whole.
+**Open questions.** None. Approved as described on 2026-11-27.

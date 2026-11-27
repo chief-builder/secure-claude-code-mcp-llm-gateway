@@ -24,7 +24,7 @@ line of reason, and the human says yes.
 ## Commands
 
 - Build: none (the components run from source)
-- Test: `uv sync`, then `for c in mock-llm oauth-lab oauth-as gateway broker; do (cd components/$c && uv run python -m pytest -q); done` and `(cd tools && uv run python -m pytest -q)`
+- Test: `uv sync`, then `for c in mock-llm mock-mcp oauth-lab oauth-as gateway broker; do (cd components/$c && uv run python -m pytest -q); done` and `(cd tools && uv run python -m pytest -q)`
 - Lint: `uv run ruff check` (a small rule set; no formatter, no type checker)
 - Docs check: `uv run python tools/check_docs.py` (links, heading anchors, shell blocks)
 - Run locally: follow the component READMEs in the order the root `README.md` lists
@@ -37,6 +37,8 @@ component directories that are importable.
 ## Architecture in brief
 
 - `components/mock-llm` — Component 1, an Anthropic Messages-compatible mock.
+- `components/mock-mcp` — a mock MCP tool server built with the official MCP SDK,
+  for the MCP gateway to sit in front of.
 - `components/oauth-lab` — Component 2A, Keycloak browser sign-in with PKCE.
 - `components/oauth-as` — Components 2B and 3, the authorization server and RFC 8693
   token exchange, plus the DPoP verifier (`dpop.py`) shared with the gateway.
