@@ -47,8 +47,8 @@ normally use; the check recorded for this component used the
 claude --mcp-config "{\"mcpServers\":{\"lab\":{\"type\":\"http\",\"url\":\"http://127.0.0.1:8767/mcp\",\"headers\":{\"Authorization\":\"Bearer $MOCK_MCP_TOKEN\"}}}}"
 ```
 
-Nothing in the quickstart uses this server yet. The MCP gateway that will sit in
-front of it is the next piece to be built.
+The [MCP gateway](../gateway/README-mcp.md) sits in front of this server; its README
+shows how to run the two together.
 
 ## Test it
 

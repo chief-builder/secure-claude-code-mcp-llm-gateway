@@ -1,6 +1,6 @@
 """Guard the import path that lets components import each other.
 
-The four component directories are added to the path by the project's editable
+The component directories are added to the path by the project's editable
 install. They come after installed packages, so a dependency that shipped a module
 called `gateway` or `exchange` would silently replace the lab's own. These tests
 turn that, and a mistyped directory, into a failure.

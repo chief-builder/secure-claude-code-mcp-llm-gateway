@@ -188,6 +188,18 @@ alone. [MCP specification](https://modelcontextprotocol.io/specification/2026-07
 Something an MCP server can do when asked, such as look something up or perform a
 calculation. The model decides when to call one; Claude Code sends the call.
 
+### MCP gateway
+
+The service between a caller and a tool server. It accepts only a DPoP-bound MCP
+token, applies the tool policy, and forwards allowed calls with its own credential.
+[How it works](concepts/mcp-gateway.md)
+
+### Tool policy
+
+A file the MCP gateway reads at startup that lists, for each user, the tools they
+may see and call. A tool not listed for a user is hidden from them and refused as
+unknown.
+
 ### Mock MCP server
 
 A stand-in tool server with two harmless tools, `lab_echo` and `lab_add`, built with

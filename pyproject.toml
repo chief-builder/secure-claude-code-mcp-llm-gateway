@@ -44,6 +44,7 @@ build-constraint-dependencies = [
 # mock-llm is not listed: it is a separate package called `app`, started with
 # uvicorn's --app-dir, and nothing imports it.
 dev-mode-dirs = [
+    "components/mock-mcp",
     "components/oauth-lab",
     "components/oauth-as",
     "components/gateway",

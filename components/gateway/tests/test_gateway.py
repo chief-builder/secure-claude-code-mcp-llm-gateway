@@ -532,3 +532,22 @@ def test_dpop_model_gateway_refuses_a_token_issued_for_the_mcp_gateway(lab, tmp_
 
     lab.run(check)
 
+
+
+def test_another_gateway_can_name_its_own_audience_and_scope(lab):
+    async def check(client):
+        trust = lab.app.state.trust
+        claims = await gateway.validate_access_token(lab.token(aud=MCP_RESOURCE), trust, "Bearer", MCP_RESOURCE)
+        assert claims["aud"] == MCP_RESOURCE
+        for token, audience in ((lab.token(), MCP_RESOURCE), (lab.token(aud=MCP_RESOURCE), gateway.TARGET),
+                                (lab.token(aud=[MCP_RESOURCE]), MCP_RESOURCE)):
+            with pytest.raises(gateway.Failure) as refused:
+                await gateway.validate_access_token(token, trust, "Bearer", audience)
+            assert refused.value.status == 401
+
+    lab.run(check)
+    gateway.enforce_policy({"client_id": gateway.CLIENT, "scope": MCP_SCOPE}, "DPoP", MCP_SCOPE)
+    with pytest.raises(gateway.Failure) as refused:
+        gateway.enforce_policy({"client_id": gateway.CLIENT, "scope": gateway.SCOPE}, "DPoP", MCP_SCOPE)
+    assert refused.value.status == 403
+    assert refused.value.challenge == 'DPoP error="insufficient_scope", scope="mcp:invoke"'

@@ -160,7 +160,8 @@ and web-address modes.
 - (Settled on 2026-11-27 by [decision 0004](0004-mock-mcp-server-uses-the-official-sdk.md):
   the mock server uses the official MCP Python SDK and the gateway is written by
   hand.)
-- The exact field for stating "DPoP required" in the published metadata.
+- (Settled on 2026-11-27: RFC 9728 defines `dpop_bound_access_tokens_required`
+  and `dpop_signing_alg_values_supported`, and the gateway publishes both.)
 - How the gateway authenticates to an upstream beyond the mock. The specification's
   OAuth Client Credentials extension is its machine-to-machine mechanism and would
   fit, though its text does not mention gateways.

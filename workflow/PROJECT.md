@@ -43,7 +43,9 @@ component directories that are importable.
 - `components/oauth-as` — Components 2B and 3, the authorization server and RFC 8693
   token exchange, plus the DPoP verifier (`dpop.py`) shared with the gateway.
 - `components/gateway` — Components 4, 5 and 8: token validation, DPoP proofs, nonces
-  and replay, and the Bedrock Converse adapter (`bedrock.py`).
+  and replay, and the Bedrock Converse adapter (`bedrock.py`). Also the MCP gateway
+  (`mcp_gateway.py`), a separate process that imports the same token and proof
+  checks and applies per-tool rules in front of the mock MCP server.
 - `components/broker` — Components 6 and 7: the local broker that launches Claude
   Code, and the Swift Secure Enclave signer under `native/`.
 - Boundaries that must hold: Claude Code never receives the gateway token or any AWS
@@ -66,7 +68,10 @@ component directories that are importable.
   never inside the repository. Do not read, copy or create key material in the
   repository.
 - Logs and audit events carry event names and request IDs only, never credentials,
-  tokens or prompt content.
+  tokens or prompt content. One exception, agreed on 2026-11-27: the MCP gateway's
+  audit lines also carry the user's mapped identity and the name of a tool the
+  policy allowed, because no other record says who called which tool. Never
+  arguments, results, or a tool name supplied by the caller.
 - Prefer open-source and free components for local development.
 - Document security limitations where they are introduced, and list them in the root
   `README.md` under Known limitations.
@@ -114,11 +119,13 @@ joined by dashes and share one name; decision records are
 ## Known pitfalls
 
 - `gateway` imports from `oauth-as` and `broker` imports from `gateway`, so a change
-  to `oauth-as` requires rerunning all three suites.
+  to `oauth-as` requires rerunning all three suites. The MCP gateway's tests import
+  `mock-mcp`, and both gateways share `gateway.py`'s checks, so a change to either
+  reruns the `gateway` suite.
 - Components import each other as plain modules. The directories are on the import
   path only because `uv sync` installs the project in editable mode (see
   `dev-mode-dirs` in `pyproject.toml`), so run everything with `uv run`. A module
-  name must be unique across `oauth-lab`, `oauth-as`, `gateway` and `broker`, and
+  name must be unique across `mock-mcp`, `oauth-lab`, `oauth-as`, `gateway` and `broker`, and
   installed packages are found before these directories; `tools/tests` fails if a
   dependency ever shadows one. A host without the editable install needs
   `PYTHONPATH` set to the directories a component imports from.
