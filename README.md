@@ -75,6 +75,7 @@ The terms in the diagram are defined in the glossary:
 | 6 | macOS credential broker | [`components/broker`](components/broker) | [docs](docs/component-06) |
 | 7 | Secure Enclave key custody | [`components/broker/native`](components/broker/native) | [docs](docs/component-07) |
 | 8 | Bedrock integration | [`gateway/bedrock.py`](components/gateway/bedrock.py) | [docs](docs/component-08) |
+| — | Mock MCP tool server, for the MCP gateway now being built | [`components/mock-mcp`](components/mock-mcp) | [decision](workflow/decisions/0004-mock-mcp-server-uses-the-official-sdk.md) |
 
 ## Running the lab
 
@@ -107,7 +108,7 @@ and a secret scan.
 
 | Suite | Runs offline | Needs a live dependency |
 |---|---|---|
-| `mock-llm`, `oauth-as`, `gateway` | All tests | — |
+| `mock-llm`, `mock-mcp`, `oauth-as`, `gateway` | All tests | — |
 | `oauth-lab` | Fixture tests | 11 tests need the running Keycloak realm; they run when `LAB_TLS_DIR` is set, so unset it when Keycloak is down |
 | `broker` | Broker tests | 6 tests need the built signer and Secure Enclave hardware (`SECURE_SIGNER_TEST_BINARY` set) |
 

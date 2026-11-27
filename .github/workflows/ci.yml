@@ -22,7 +22,7 @@ jobs:
       - name: Run offline tests
         run: |
           set -e
-          for c in mock-llm oauth-lab oauth-as gateway broker; do
+          for c in mock-llm mock-mcp oauth-lab oauth-as gateway broker; do
             echo "== $c"
             (cd "components/$c" && uv run --locked python -m pytest -q)
           done

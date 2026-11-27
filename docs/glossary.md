@@ -177,6 +177,22 @@ A stand-in for a model that speaks the Anthropic Messages API and
 always answers `MOCK_OK`. It lets the whole security path be tested without calling a
 real model.
 
+### MCP (Model Context Protocol)
+
+The protocol Claude Code uses to ask a server which tools it has and to run one.
+The lab uses revision 2026-07-28, which keeps no sessions: every request stands
+alone. [MCP specification](https://modelcontextprotocol.io/specification/2026-07-28)
+
+### Tool
+
+Something an MCP server can do when asked, such as look something up or perform a
+calculation. The model decides when to call one; Claude Code sends the call.
+
+### Mock MCP server
+
+A stand-in tool server with two harmless tools, `lab_echo` and `lab_add`, built with
+the official MCP software kit. It is what the MCP gateway sits in front of.
+
 ### Anthropic Messages API
 
 The HTTP API Claude Code uses to talk to a model. The

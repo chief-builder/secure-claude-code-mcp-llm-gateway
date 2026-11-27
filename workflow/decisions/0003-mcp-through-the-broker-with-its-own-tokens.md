@@ -157,8 +157,9 @@ and web-address modes.
 
 **Still to verify, when the first build task is specified.**
 
-- Whether to use the official MCP Python SDK or a small hand-written
-  implementation. With three methods and no sessions, hand-written is plausible.
+- (Settled on 2026-11-27 by [decision 0004](0004-mock-mcp-server-uses-the-official-sdk.md):
+  the mock server uses the official MCP Python SDK and the gateway is written by
+  hand.)
 - The exact field for stating "DPoP required" in the published metadata.
 - How the gateway authenticates to an upstream beyond the mock. The specification's
   OAuth Client Credentials extension is its machine-to-machine mechanism and would

@@ -22,7 +22,7 @@ Target: not set · Theme: the MCP gateway's first stage, in the local lab
 |------|------------|--------|-----------|
 | rfc-10070-assertion-type | Sign-in and token issuance | shipped | [workflow/releases/0.3.0/rfc-10070-assertion-type/](releases/0.3.0/rfc-10070-assertion-type/) |
 | mcp-tokens | MCP gateway | shipped | [workflow/releases/0.3.0/mcp-tokens/](releases/0.3.0/mcp-tokens/) |
-| mock-mcp-server | MCP gateway | backlog | — |
+| mock-mcp-server | MCP gateway | shipped | [workflow/releases/0.3.0/mock-mcp-server/](releases/0.3.0/mock-mcp-server/) |
 | mcp-gateway | MCP gateway | backlog | — |
 | broker-mcp-endpoint | MCP gateway | backlog | — |
 
@@ -32,7 +32,7 @@ What each task is, in build order. The design they follow is
 - **rfc-10070-assertion-type** — Set the client assertion's type as RFC 10070 recommends. RFC 10070 (November 2026) is the published update to RFC 7523. Its audience rule, issuer as the sole value, is already implemented. What remains: the two lab clients set the header `typ` to `client-authentication+jwt`; the server keeps accepting assertions without it, as the RFC advises; and the code comment that cites the draft cites the RFC instead
 - **mcp-tokens** — Issue tokens for MCP: a second audience and scope in the authorization server's token exchange, so model tokens and MCP tokens cannot stand in for each other. The audience is the MCP gateway's endpoint address, which the broker names in its request, as the MCP specification expects. A change to an accepted security module
 - **mock-mcp-server** — A mock MCP server for revision 2026-07-28 of the specification, with at least two harmless tools so a rule that allows one and refuses the other can be shown. It answers `server/discover`, `tools/list` and `tools/call`, checks that the request headers match the body, and checks `Origin`
-- **mcp-gateway** — The MCP gateway: verify the MCP token, the DPoP proof, the nonce and replay; check the MCP request headers against the body; answer `server/discover` itself and allow only `tools/list` and `tools/call`; apply per-tool rules by leaving disallowed tools out of the list, marking the list private so it cannot be cached across users, and refusing calls to them as unknown tools; forward to the mock with the gateway's own credential and never the user's token; publish the metadata the specification requires; audit the user and tool name, never the arguments. Proven by a test client
+- **mcp-gateway** — The MCP gateway: verify the MCP token, the DPoP proof, the nonce and replay; check the MCP request headers against the body; answer `server/discover` itself and allow only `tools/list` and `tools/call`; apply per-tool rules by leaving disallowed tools out of the list, marking the list private so it cannot be cached across users, and refusing calls to them as unknown tools; forward to the mock with the gateway's own credential and never the user's token; publish the metadata the specification requires; audit the user and tool name, never the arguments. Proven by a test client. Rules learned from the mock server, which is built with the official SDK: it answers an unknown tool with a result flagged as an error and not the unknown-tool error; it picks the revision's rules from the `MCP-Protocol-Version` header alone, and without `2026-07-28` there it does not compare headers with body, and `GET` opens a stream; and it advertises prompts and resources. So the gateway requires the 2026-07-28 header from its caller and checks it against the body, sends that header on every request it forwards, forwards `POST` only, decides for itself which tools exist, and advertises tools only
 - **broker-mcp-endpoint** — The broker as Claude Code's local MCP endpoint: a second loopback listener protected by the session secret, speaking revision 2026-07-28 only (a probe showed the installed Claude Code speaks it), tools and MCP enabled in the launched CLI, and Claude Code shown listing only the tools the user may call
 
 ## Next release (tentative)
@@ -75,4 +75,4 @@ conversation alongside features.
 
 - Strict JSON parsing is duplicated in `oauth-lab/oidc.py` and `oauth-as/foundation.py`; a fix to one can miss the other (filed: 0.1.0)
 - The Bedrock request is validated twice, once in the gateway and once in the adapter transport (filed: 0.1.0)
-- The mock's tests use a Starlette test client that now emits a deprecation warning (filed: 0.1.0)
+- The mock LLM's tests use a Starlette test client that warns when it falls back to `httpx`. The warning is hidden, not fixed: the MCP SDK brings `httpx2`, which the test client prefers, so those tests now run on `httpx2` and the warning returns if the SDK is ever removed (filed: 0.1.0, updated: 0.3.0)
