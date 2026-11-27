@@ -75,17 +75,24 @@ cite RFC 10070.
 
 **Proof.**
 
-- Authorization server suite: 65 passed, up from 55, with tests for six accepted
+- Authorization server suite: 66 passed, up from 55, with tests for six accepted
   forms, six rejected ones and nine values that are not text. The gateway suite: 94
-  passed, with a new test that decodes what the lab client actually sends. Both new
-  tests were shown to fail when the code they guard is removed.
+  passed, with a new test that decodes what `lab_invoke.py` actually sends; a
+  matching test does the same for `lab_exchange.py`. All three new tests were shown
+  to fail when the code they guard is removed.
 - Live lab from a fresh clone, with the owner signing in: the broker with the
   software key exited 0 with `MOCK_OK`, the DPoP probe succeeded, and the broker
   with the Secure Enclave signer returned `MOCK_OK`. The authorization server logged
   three successful exchanges and no service log held a traceback.
-- The live run came before the change described in the first row below. The lab's
-  clients send the exact recommended type, which is accepted before and after that
-  change, so the run was not repeated.
+- That run came before the change described in the first row below. A second live
+  run on the final code, in Bearer mode from a fresh clone with the owner signing
+  in, covered what the first did not: `lab_exchange.py`'s own probe printed
+  `component_03_succeeded`, and the gateway's Bearer-mode probe printed
+  `component_04_succeeded`. The authorization server logged two successful exchanges
+  and the three refusals the probe deliberately provokes.
+- The DPoP paths (the broker and the DPoP probe) were not run again on the final
+  code. The lab's clients send the exact recommended type, which is accepted before
+  and after the change.
 
 **Verifier findings and what was done.** The verifier could not break the security
 claim: the check runs after the signature is verified, uses up nothing when it
@@ -95,7 +102,7 @@ assertions.
 | Finding | Disposition |
 |---|---|
 | Types written in another case or with a leading `application/`, such as `jwt` or `application/jwt`, were refused. RFC 7515 treats the type as a media type name where neither matters, and RFC 10070 advises against refusing generic assertions | Fixed: the type is now compared that way. Decided on the owner's behalf, as a detail inside the approved rule |
-| Nothing offline checked the type the lab clients send; removing it would have passed every suite | Fixed for `lab_invoke.py`, which the probe and the broker use. `lab_exchange.py` uses the same constant on the matching line and is covered by reading only; its probe needs an authorization server in Bearer mode and was not run |
+| Nothing offline checked the type the lab clients send; removing it would have passed every suite | Fixed for both clients: one test decodes what `lab_invoke.py` sends and another what `lab_exchange.py` sends. Both probes were also run live |
 | The new test did not show that a refused assertion's identifier stays unused | Fixed: the same identifier and subject token are accepted once the type is right, and refused on a third use |
 | The Component 3 design note was reworded to say the earlier audience change followed the RFC, when it followed the draft | Corrected to say the draft was later published as the RFC |
 | The glossary read as if the RFC requires the type | Corrected: it is a recommendation |
