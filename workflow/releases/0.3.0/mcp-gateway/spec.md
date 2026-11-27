@@ -150,12 +150,11 @@ unchanged. Dependencies: none new.
       disallowed one refused. Recorded in the task folder.
 - [ ] A diagram page shows the path of a tool call and where each check sits.
 
-**Open questions.** Three decisions for the owner:
+**Open questions.** None. Decided by the owner on 2026-11-27:
 
-1. What a signed-in user with no entry in the policy gets: an empty tool list
-   (proposed), or a 403.
-2. Which tool the synthetic user is allowed in the lab's example policy: `lab_echo`
-   only (proposed), so the demonstration shows one tool allowed and one hidden.
-3. Changing the logging convention so the MCP gateway's audit log may carry the
-   mapped user identity and an allowed tool's name. Decision 0003 already calls
-   for it; the convention in `workflow/PROJECT.md` forbids it as written.
+1. A signed-in user with no entry in the policy gets an empty tool list, not a 403.
+2. The lab's example policy allows the synthetic user `lab_echo` only.
+3. The logging convention changes so the MCP gateway's audit log may carry the
+   mapped user identity and an allowed tool's name.
+
+Awaiting approval of the spec as a whole.
