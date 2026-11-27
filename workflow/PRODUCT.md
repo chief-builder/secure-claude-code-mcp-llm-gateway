@@ -21,7 +21,7 @@ file says why it matters. Grown by the shape playbook; statuses kept true by hyg
 - Keycloak browser sign-in with PKCE — done
 - Authorization server metadata and signing keys — done
 - RFC 8693 token exchange with one-time use — done
-- RFC 7523bis explicit assertion type (`typ`) — idea
+- Client assertions that follow RFC 10070: issuer-only audience and explicit type — done
 - An exchange service that keeps the exchange client's key off laptops — idea
 
 ### Sender-constrained access

@@ -2,7 +2,7 @@
 
 Release: 0.3.0 · Roadmap line: rfc-10070-assertion-type ·
 Capability: Sign-in and token issuance
-Status: draft
+Status: **approved** (2026-11-26)
 
 Intent and spec on one page; the change is small.
 
@@ -61,8 +61,5 @@ authorization server's tests, and the documents that describe the assertion.
 - [ ] A live lab run from a fresh clone ends with the broker exiting 0 and printing
       `MOCK_OK`, and the DPoP probe succeeds.
 
-**Open questions.**
-
-1. Should the server reject assertions that declare a different token type, as
-   described above, or keep ignoring the type? Recommended: reject. A type the
-   server never reads protects nothing.
+**Open questions.** None. Decided at approval on 2026-11-26: the server rejects
+assertions that declare a different token type, and the task closes with a live run.

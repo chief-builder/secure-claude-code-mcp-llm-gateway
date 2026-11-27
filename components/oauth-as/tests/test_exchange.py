@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
 from app import create_app
 from dpop import Verifier, encode, thumbprint
-from exchange import ACCESS, ASSERTION, CLIENT, GRANT, SCOPE, TARGET
+from exchange import ACCESS, ASSERTION, ASSERTION_TYPE, CLIENT, GRANT, SCOPE, TARGET
 from foundation import EXCHANGE_CANDIDATE as CANDIDATE
 from foundation import ISSUER, UPSTREAM, public_jwk
 from test_foundation import issuer_transport, reply, running
@@ -36,7 +36,8 @@ def profile(local, upstream_key):
         return create_app(directory, certifi.where(), exchange_policy=policy,
                           dpop_nonce_key=dpop_nonce_key, transport=transport or issuer_transport(upstream_key))
 
-    def form(subject=None, *, source_claims=None, client_claims=None, client_key=key):
+    def form(subject=None, *, source_claims=None, client_claims=None, client_key=key,
+             client_type=ASSERTION_TYPE):
         now = int(time.time())
         if subject is None:
             subject = jwt.encode({
@@ -48,7 +49,7 @@ def profile(local, upstream_key):
         assertion = jwt.encode({
             "iss": CLIENT, "sub": CLIENT, "aud": ISSUER, "iat": now,
             "exp": now + 30, "jti": secrets.token_urlsafe(24), **(client_claims or {}),
-        }, client_key, algorithm="RS256", headers={"kid": registered["kid"]})
+        }, client_key, algorithm="RS256", headers={"kid": registered["kid"], "typ": client_type})
         return {"grant_type": GRANT, "audience": TARGET, "scope": SCOPE,
                 "client_assertion_type": ASSERTION, "client_assertion": assertion,
                 "subject_token": subject, "subject_token_type": CANDIDATE["subject_token_type"]}
@@ -151,6 +152,31 @@ def test_bad_requests_and_client_consumption(profile, upstream_key):
             rejected(await client.post("/token", data=form(client_claims={"aud": "https://else/token"}),
                                        headers={"X-Forwarded-Host": "else", "X-Forwarded-Proto": "https"}),
                      "invalid_client")
+
+    asyncio.run(check())
+
+
+def header_type(request):
+    return jwt.get_unverified_header(request["client_assertion"]).get("typ", "absent")
+
+
+def test_client_assertion_type(profile):
+    app, form = profile
+
+    async def check():
+        async with running(app()) as client:
+            # RFC 10070: accept the explicit type, and do not reject untyped assertions.
+            for accepted, sent in ((ASSERTION_TYPE, "client-authentication+jwt"), ("JWT", "JWT"), (None, "absent")):
+                request = form(client_type=accepted)
+                assert header_type(request) == sent
+                assert (await client.post("/token", data=request)).status_code == 200
+            # An assertion that declares itself another kind of token is refused,
+            # and refusing it spends neither the assertion nor the subject token.
+            for other in ("at+jwt", "dpop+jwt", "client-authentication+jwt ", "jwt"):
+                request = form(client_type=other)
+                rejected(await client.post("/token", data=request), "invalid_client")
+                retry = form(request["subject_token"])
+                assert (await client.post("/token", data=retry)).status_code == 200
 
     asyncio.run(check())
 

@@ -29,6 +29,10 @@ TARGET = CANDIDATE["target"]
 SCOPE = CANDIDATE["scope"]
 GRANT = "urn:ietf:params:oauth:grant-type:token-exchange"
 ASSERTION = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+# RFC 10070: clients should type their assertion, and servers should not reject
+# untyped ones. "JWT" is the generic type many libraries add by default.
+ASSERTION_TYPE = "client-authentication+jwt"
+ACCEPTED_ASSERTION_TYPES = (ASSERTION_TYPE, "JWT", None)
 ACCESS = "urn:ietf:params:oauth:token-type:access_token"
 REQUIRED = {"grant_type", "subject_token", "subject_token_type", "audience", "scope"}
 AUTH_FIELDS = {"client_assertion", "client_assertion_type"}
@@ -181,8 +185,9 @@ class Exchange:
             header, claims = token_parts(token)
             verify(token, self.client_keys[header["kid"]])
             jti = claims.get("jti")
-            if (claims.get("iss") != CLIENT or claims.get("sub") != CLIENT
-                    # The issuer identifier is the only accepted audience (draft-ietf-oauth-rfc7523bis).
+            if (header.get("typ") not in ACCEPTED_ASSERTION_TYPES
+                    or claims.get("iss") != CLIENT or claims.get("sub") != CLIENT
+                    # The issuer identifier is the only accepted audience (RFC 10070).
                     or claims.get("aud") != ISSUER
                     or not isinstance(jti, str) or not re.fullmatch(r"[A-Za-z0-9_-]{22,128}", jti)
                     or not valid_times(claims, int(time.time()), 60, 60)):
