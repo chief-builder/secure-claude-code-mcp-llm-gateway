@@ -658,3 +658,35 @@ def test_dpop_exchange_token_authorizes_gateway_invocation(profile, local, monke
                 assert "dpop" not in calls[0].headers
 
     asyncio.run(check())
+
+
+def test_lab_exchange_probe_assertion_follows_rfc_10070(tmp_path, monkeypatch):
+    """The Bearer-mode probe marks its client assertion as RFC 10070 recommends."""
+    import httpx
+    import lab_exchange
+    from types import SimpleNamespace
+
+    client_dir, as_keys = tmp_path / "exchanger", tmp_path / "keys"
+    as_keys.mkdir(mode=0o700)
+    lab_exchange.provision(client_dir, as_keys)
+    sent = []
+
+    def authorization_server(request):
+        if request.method == "GET":
+            return httpx.Response(200, json={"keys": [{"kid": "synthetic"}]})
+        sent.append(dict(httpx.QueryParams(request.content.decode())))
+        return httpx.Response(400, json={"error": "stop_after_capture"})
+
+    monkeypatch.setattr(lab_exchange, "tls_client",
+                        lambda _: httpx.Client(transport=httpx.MockTransport(authorization_server)))
+    monkeypatch.setattr(lab_exchange, "login",
+                        lambda keycloak: setattr(keycloak, "subject_token", "subject-token"))
+    args = SimpleNamespace(client_dir=client_dir, keycloak_ca=None, as_ca=None, expected_subject="x")
+    with pytest.raises(httpx.HTTPStatusError):
+        lab_exchange.probe(args)
+    assert len(sent) == 1
+    assertion = sent[0]["client_assertion"]
+    assert jwt.get_unverified_header(assertion)["typ"] == ASSERTION_TYPE
+    claims = jwt.decode(assertion, options={"verify_signature": False})
+    assert claims["aud"] == ISSUER and claims["iss"] == claims["sub"] == CLIENT
+
