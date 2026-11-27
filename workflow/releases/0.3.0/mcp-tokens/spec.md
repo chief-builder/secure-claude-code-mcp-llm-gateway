@@ -137,6 +137,11 @@ unlisted subject is indistinguishable from an unknown one.
 | A request carrying `resource` used to be refused before the client was authenticated; it is now authenticated first, uses up the client assertion, and is refused as an unknown target | Intended. It is the one case where a request refused before is refused differently now |
 | Stricter than the RFCs require: a repeated `resource`, and `audience` together with `resource`, are refused | Accepted. Both are restrictions, not violations |
 
+**Added at the owner's request after the outcome was written.** A concepts page,
+`docs/concepts/tokens-and-modes.md`, with diagrams of the two modes and the two
+kinds of token, and two workflow amendments: tasks that change a concept add a
+diagram, and tasks that change a security check show the check is really tested.
+
 **Decided on the owner's behalf.** An unlisted subject is refused exactly as an
 unknown subject is, so a caller cannot learn who is known. The model target keeps
 its replay record format unchanged, so a record written before an update still

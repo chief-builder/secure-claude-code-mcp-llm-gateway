@@ -61,6 +61,25 @@ and replayed would defeat the purpose of that gateway, so the authorization serv
 refuses to create one at all unless it is running in DPoP mode and can tie the
 token to a key.
 
+### What the token is called, and what is still a bearer credential
+
+In DPoP mode the access token is called a **DPoP-bound access token**, or more
+generally a *sender-constrained* token: it only works for the sender who holds the
+key it names. It is the same kind of signed document as in Bearer mode, with one
+extra claim naming the key, and it is sent with the word `DPoP` in place of
+`Bearer`. The gateway refuses it if it arrives labelled `Bearer`, so it cannot be
+downgraded.
+
+DPoP mode protects the access token. A few other credentials in the lab still work
+for whoever holds them, each limited in another way:
+
+| Credential | Where it travels | What limits it |
+|---|---|---|
+| Sign-in token from Keycloak | Broker to authorization server | Accepted for one minute, once per kind of token, and only alongside the exchange client's signed assertion |
+| Session secret | Claude Code to the broker | Random, valid for one broker session, and only on the Mac's own loopback address |
+| The gateway's credential for the mock | Gateway to the mock model | Known only to those two services, on loopback |
+| Keycloak's own access token | Returned at sign-in | Not used by the lab, and discarded |
+
 ## Two kinds of token from one sign-in
 
 The authorization server issues two kinds of access token. Each names one gateway
