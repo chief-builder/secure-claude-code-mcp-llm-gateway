@@ -103,7 +103,7 @@ Expect the CLI to print `MOCK_OK`, followed by
 uv run python -m pytest -q
 ```
 
-Expect 95 passed. All tests run offline. The Bedrock tests use injected SDK clients
+Expect 96 passed. All tests run offline. The Bedrock tests use injected SDK clients
 or the SDK's own stubber with synthetic credentials; they never resolve AWS
 credentials or call Bedrock.
 

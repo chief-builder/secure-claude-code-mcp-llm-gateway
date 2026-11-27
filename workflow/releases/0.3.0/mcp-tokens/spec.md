@@ -65,22 +65,22 @@ refused or not, as it is today. The first wording, "use up nothing", was wrong.)
 
 **Acceptance criteria.**
 
-- [ ] A request with `resource` and `scope=mcp:invoke`, from a subject listed in
+- [x] A request with `resource` and `scope=mcp:invoke`, from a subject listed in
       `mcp_subjects`, with DPoP, returns a token whose audience is
       `https://127.0.0.1:8083/mcp`, whose scope is `mcp:invoke`, and whose `cnf.jkt`
       matches the proof key.
-- [ ] The same ID token yields one model token and one MCP token, in either order;
+- [x] The same ID token yields one model token and one MCP token, in either order;
       a second request for either target is refused as a replay.
-- [ ] Refused, each leaving the sign-in token unused: both `audience` and `resource`; neither; an
+- [x] Refused, each leaving the sign-in token unused: both `audience` and `resource`; neither; an
       unknown `resource`; `mcp:invoke` with the model audience; `llm:invoke` with
       the MCP resource; a subject not in `mcp_subjects`; a policy with no
       `mcp_subjects`; and any MCP request in Bearer mode.
-- [ ] A policy file written before this change loads and behaves as before. A
+- [x] A policy file written before this change loads and behaves as before. A
       policy whose `mcp_subjects` names a subject that is not in `subjects`, or is
       not a list of text, is refused at startup.
-- [ ] The LLM gateway refuses an MCP token with 401, in a gateway test.
-- [ ] All existing tests pass unchanged, apart from additions.
-- [ ] Live lab run from a fresh clone: the broker and the DPoP probe succeed as
+- [x] The LLM gateway refuses an MCP token with 401, in a gateway test.
+- [x] All existing tests pass unchanged, apart from additions.
+- [x] Live lab run from a fresh clone: the broker and the DPoP probe succeed as
       before, and the probe's new step obtains an MCP token from the same sign-in
       and sees the LLM gateway refuse it.
 
@@ -88,3 +88,56 @@ refused or not, as it is today. The first wording, "use up nothing", was wrong.)
 exchanged once per target; MCP tokens need an explicit `mcp_subjects` list in the
 policy; and the three details (DPoP only, the gateway address as audience, the scope
 name `mcp:invoke`) stand as written.
+
+## Outcome — 2026-11-26
+
+All acceptance criteria met.
+
+**What was built.** The authorization server issues a second kind of token, for the
+MCP gateway: audience `https://127.0.0.1:8083/mcp`, scope `mcp:invoke`, requested
+with the `resource` parameter. It is issued only with DPoP and only to subjects in
+the policy's optional `mcp_subjects` list. A sign-in token is accepted once per
+target. The lab client can request either kind, and its probe has an optional
+`--mcp` step.
+
+**Proof.**
+
+- Authorization server suite: 88 passed, up from 66. Gateway suite: 96 passed, up
+  from 94. Every test that existed before passes unchanged, and the verifier ran
+  `main`'s own copy of the exchange tests against the new code: 35 passed.
+- Six mutations of the new server logic, one at a time, were each caught by the new
+  tests: ignoring the target in the replay record, not checking the subject list,
+  allowing MCP without DPoP, allowing `audience` with `resource`, writing the model
+  audience into an MCP token, and not matching the scope to the target.
+- Live lab on 2026-11-26, from a fresh clone at commit `2c8b2e0`, with a policy
+  listing the synthetic user and the owner signing in:
+  - `lab_invoke.py --dpop --mcp` printed `component_05_succeeded` and
+    `mcp_token_succeeded`: one sign-in produced a model token and an MCP token, and
+    the model gateway refused the MCP token.
+  - The broker with the software key exited 0 with `MOCK_OK`; the broker with the
+    Secure Enclave signer returned `MOCK_OK`.
+  - The authorization server logged four successful exchanges. The gateway logged
+    one `authentication_failed`, the refused MCP token, and four successful
+    invocations. No service log held a traceback.
+- The changes made after that run, listed below, are to the probe, a test and
+  documents. They were verified by the suites, not by another live run.
+
+**Verifier findings and what was done.** The verifier could not break token
+issuance: every impossible audience and scope combination was refused, the
+once-per-target rule held in every order and with ten concurrent requests, and an
+unlisted subject is indistinguishable from an unknown one.
+
+| Finding | Disposition |
+|---|---|
+| The live run had no record in the branch | Recorded above |
+| The glossary and the request walkthrough still said an ID token is used once | Corrected in both |
+| The probe checked the token's audience by containment, so a token naming both gateways would have passed its check | Fixed: the probe requires the audience alone |
+| The probe could not tell a refusal for audience from a refusal for expiry | Fixed: the probe first checks the token has at least 30 seconds left |
+| The gateway test covered tokens without a key binding only, a shape the server never issues for MCP | Fixed: a second test uses key-bound tokens in DPoP mode |
+| A request carrying `resource` used to be refused before the client was authenticated; it is now authenticated first, uses up the client assertion, and is refused as an unknown target | Intended. It is the one case where a request refused before is refused differently now |
+| Stricter than the RFCs require: a repeated `resource`, and `audience` together with `resource`, are refused | Accepted. Both are restrictions, not violations |
+
+**Decided on the owner's behalf.** An unlisted subject is refused exactly as an
+unknown subject is, so a caller cannot learn who is known. The model target keeps
+its replay record format unchanged, so a record written before an update still
+blocks a replay after it.

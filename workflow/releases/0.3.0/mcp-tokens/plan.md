@@ -28,8 +28,8 @@ for arbitrary audiences).
 | 4 | Gateway test: the LLM gateway refuses an MCP token | 401 in the gateway suite | **done** |
 | 5 | `lab_invoke.py`: exchange for either target; optional probe step | Offline test decodes what it sends; suites pass | **done** |
 | 6 | README and glossary | Documentation check passes | **done** |
-| 7 | Live lab run from a fresh clone, with a policy that lists the subject | Broker and probe as before; MCP step succeeds | todo |
-| 8 | Verifier agent, then land | Acceptance criteria met | todo |
+| 7 | Live lab run from a fresh clone, with a policy that lists the subject | Broker and probe as before; MCP step succeeds | **done** |
+| 8 | Verifier agent, then land | Acceptance criteria met | **done** |
 
 **Risks.** The existing tests post requests without `resource`; a mistake in target
 resolution would show as widespread failures, which is the early signal. The replay

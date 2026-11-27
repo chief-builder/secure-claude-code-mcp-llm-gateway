@@ -510,3 +510,25 @@ def test_model_gateway_refuses_a_token_issued_for_the_mcp_gateway(lab):
 
     lab.run(check)
 
+
+def test_dpop_model_gateway_refuses_a_token_issued_for_the_mcp_gateway(lab, tmp_path):
+    """The shape the authorization server really issues for MCP: bound to a key."""
+    setup_gateway_dpop(lab, tmp_path)
+    signer = ProofClient()
+    binding = {"cnf": {"jkt": signer.jkt}}
+
+    async def attempt(client, **claims):
+        token = lab.token(**binding, **claims)
+        return await client.post("/v1/messages", json=REQUEST,
+                                 headers=dpop_headers(token, signer.sign(GATEWAY, token)))
+
+    async def check(client):
+        for claims in ({"aud": MCP_RESOURCE, "scope": MCP_SCOPE}, {"aud": MCP_RESOURCE},
+                       {"aud": [gateway.TARGET, MCP_RESOURCE]}, {"aud": [gateway.TARGET]}):
+            response = await attempt(client, **claims)
+            assert response.status_code == 401
+            assert response.headers["www-authenticate"] == 'DPoP error="invalid_token"'
+        assert not lab.mock_calls
+
+    lab.run(check)
+

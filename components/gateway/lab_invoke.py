@@ -84,11 +84,13 @@ def exchange_token(args, subject, proof, *, signing_key=None, mcp=False):
                 keys = authority.get(ISSUER + "/jwks").raise_for_status().json()["keys"]
                 header = jwt.get_unverified_header(token)
                 jwk, = [entry for entry in keys if entry["kid"] == header["kid"]]
+                audience, scope = (MCP_RESOURCE, MCP_SCOPE) if mcp else (TARGET, SCOPE)
                 claims = jwt.decode(token, jwt.PyJWK.from_dict(jwk).key, algorithms=["RS256"],
-                                    audience=MCP_RESOURCE if mcp else TARGET, issuer=ISSUER)
-                if (claims.get("cnf") != {"jkt": proof.jkt}
-                        or claims.get("scope") != (MCP_SCOPE if mcp else SCOPE)):
-                    raise ValueError("Unexpected access token binding or scope")
+                                    audience=audience, issuer=ISSUER)
+                # The library accepts a list containing the audience; require it alone.
+                if (claims["aud"] != audience or claims.get("cnf") != {"jkt": proof.jkt}
+                        or claims.get("scope") != scope):
+                    raise ValueError("Unexpected access token audience, binding or scope")
             return token
 
 
@@ -138,7 +140,11 @@ def probe(args):
             raise ValueError("Incomplete mock stream")
 
         if mcp_token is not None:
-            # The model gateway must refuse a token issued for the MCP gateway.
+            # The model gateway must refuse a token issued for the MCP gateway. Check the
+            # token is still within its lifetime, so the refusal is not for expiry.
+            expiry = jwt.decode(mcp_token, options={"verify_signature": False})["exp"]
+            if expiry - time.time() < 30:
+                raise ValueError("MCP token too close to expiry to test the refusal")
             refused = client.post(GATEWAY, json=REQUEST, headers={
                 "authorization": f"DPoP {mcp_token}", "DPoP": proof.sign(GATEWAY, mcp_token)})
             if (refused.status_code != 401
